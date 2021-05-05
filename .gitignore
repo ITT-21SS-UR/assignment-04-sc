@@ -1,0 +1,5 @@
+.vscode/
+__pycache__/
+.idea/
+fitts_law_test.py
+test_setup
