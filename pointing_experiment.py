@@ -12,6 +12,7 @@ class CircleWidget(QtWidgets.QWidget):
         super(CircleWidget, self).__init__(parent)
         
         self.setAttribute(QtCore.Qt.WA_StaticContents)
+        self.setMouseTracking(True)
         
         self.radius = 0
         self.color = QtGui.QColor("Black")
