@@ -137,16 +137,16 @@ class MainWindow(QtWidgets.QWidget):
             circle.set_diameter(diameter)
             circle.move(x, y)
 
-            while self.has_collision(circle, self.circles):
+            while self.has_collision(circle):
                 (x, y) = self.get_random_pos(max_x, max_y)
                 circle.move(x, y)
 
             circle.clicked.connect(self.__circle_clicked)
             self.circles.append(circle)
 
-    def has_collision(self, current_item, items):
-        for circle in items:
-            if current_item.geometry().intersects(circle.geometry()):
+    def has_collision(self, new_circle):
+        for circle in self.circles:
+            if new_circle.geometry().intersects(circle.geometry()):
                 return True
 
         return False
