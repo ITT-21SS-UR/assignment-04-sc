@@ -1,19 +1,25 @@
-import sys, random
+import configparser
+import json
+import os
+import random
+import sys
+from math import dist
+
 from PyQt5 import QtGui, QtWidgets, QtCore
 from PyQt5.QtCore import pyqtSignal
-from math import dist
+
+from pointing_experiment_model import PointingExperimentModel
 
 
 class CircleWidget(QtWidgets.QWidget):
-
     clicked = pyqtSignal()
 
-    def __init__(self, parent = None):
+    def __init__(self, parent=None):
         super(CircleWidget, self).__init__(parent)
-        
+
         self.setAttribute(QtCore.Qt.WA_StaticContents)
         self.setMouseTracking(True)
-        
+
         self.radius = 0
         self.color = QtGui.QColor("Black")
         self.setMinimumSize(50, 50)
@@ -45,7 +51,7 @@ class CircleWidget(QtWidgets.QWidget):
 
 
 class MainWindow(QtWidgets.QWidget):
-    def __init__(self):
+    def __init__(self, test_config):
         super(MainWindow, self).__init__()
         self.width = 800
         self.height = 600
@@ -58,6 +64,8 @@ class MainWindow(QtWidgets.QWidget):
         # self.circles.append(CircleWidget(self))
 
         self.__setup_ui()
+
+        model = PointingExperimentModel(test_config)
 
     def __setup_ui(self):
         self.setAutoFillBackground(True)
@@ -73,7 +81,6 @@ class MainWindow(QtWidgets.QWidget):
         # circle.move(100, 100)
         # circle.clicked.connect(lambda: print("clicked"))
 
-    
     def create_circles(self, count, diameter):
         min_x_y = diameter
         max_x = self.width - diameter
@@ -84,32 +91,74 @@ class MainWindow(QtWidgets.QWidget):
         while i < count:
             x = self.genRandNum(min_x_y, max_x)
             y = self.genRandNum(min_x_y, max_y)
-            
+
             circle = CircleWidget(self)
             circle.setDiameter(diameter)
             circle.move(x, y)
 
             if self.check_collision(circle, self.circles):
                 circle.destroy()
-            
+
             self.circles.append(circle)
             i += 1
 
     def check_collision(self, current_item, items):
         # QtWidgets.QGraphicsItem.collidesWithItem
-        for i in range (0, len(items)):
+        for i in range(0, len(items)):
             if current_item.rect().intersects(items[i].rect()):
                 return True
         return False
 
     def genRandNum(self, min, max):
         return random.randint(min, max)
-    
+
     def mouseMoveEvent(self, event):
-        #print(str(event.pos()))
+        # print(str(event.pos()))
         pass
 
+
+def exit_program(message="Please give a valid .ini or .json file as arguments (-_-)\n"):
+    sys.stderr.write(message)
+    sys.exit(1)
+
+
+def create_ini_config(file_name):
+    config = configparser.ConfigParser()
+    config.read(file_name)
+
+    return dict(config["DEFAULT"])
+
+
+def create_json_config(file_name):
+    with open(file_name) as file:
+        return json.load(file)
+
+
+def read_test_config():
+    if len(sys.argv) < 2:
+        exit_program()
+
+    file_name = sys.argv[1]
+
+    if not os.path.isfile(file_name):
+        exit_program("File does not exist (-_-)\n")
+
+    file_extension = os.path.splitext(file_name)
+
+    if file_extension[-1] == ".ini":
+        return create_ini_config(file_name)
+
+    elif file_extension[-1] == ".json":
+        return create_json_config(file_name)
+
+    else:
+        exit_program()
+
+
 if __name__ == '__main__':
+    # TODO check if file contains correct and all relevant data?
+    test_config = read_test_config()
+
     # Create the Qt Application
     app = QtWidgets.QApplication(sys.argv)
 
@@ -118,9 +167,9 @@ if __name__ == '__main__':
     # circle.setDiameter(500)
     # circle.show()
 
-    trial = MainWindow()
+    trial = MainWindow(test_config)
     trial.show()
     # trial = CircleWidget(50, 50, 100, QtGui.QColor(10, 10, 10))
-  
+
     # Run the main Qt loop
     sys.exit(app.exec_())

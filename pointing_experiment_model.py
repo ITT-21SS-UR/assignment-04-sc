@@ -1,7 +1,3 @@
-import configparser
-import json
-import os
-import sys
 from enum import Enum
 
 import pandas as pd
@@ -54,48 +50,3 @@ class PointingExperimentModel(QObject):
 
         data_frame = data_frame.append(row_data, ignore_index=True)
         data_frame.to_csv(self.__file, index=False)
-
-
-def exit_program(message="Please give a valid .ini or .json file as arguments (-_-)\n"):
-    sys.stderr.write(message)
-    sys.exit(1)
-
-
-def create_ini_config(file_name):
-    config = configparser.ConfigParser()
-    config.read(file_name)
-
-    return dict(config["DEFAULT"])
-
-
-def create_json_config(file_name):
-    with open(file_name) as file:
-        return json.load(file)
-
-
-def read_test_config():
-    if len(sys.argv) < 2:
-        exit_program()
-
-    file_name = sys.argv[1]
-
-    if not os.path.isfile(file_name):
-        exit_program("File does not exist (-_-)\n")
-
-    file_extension = os.path.splitext(file_name)
-
-    if file_extension[-1] == ".ini":
-        return create_ini_config(file_name)
-
-    elif file_extension[-1] == ".json":
-        return create_json_config(file_name)
-
-    else:
-        exit_program()
-
-
-if __name__ == '__main__':
-    test_config = read_test_config()  # TODO move to pointing experiment
-    # TODO check if file contains correct and all relevant data?
-
-    model = PointingExperimentModel(test_config)
