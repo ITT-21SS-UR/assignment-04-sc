@@ -1,9 +1,0 @@
-participant_id,condition,mouse_start_x_position,mouse_start_y_position,mouse_clicked_x_position,mouse_clicked_y_position,distance_to_start_position,circle_count,is_circle_clicked,is_correct_target,reaction_time_in_ms,timestamp
-1,condition1,0,0,568,369,677.3366961858777,30,False,False,774.645,2021-05-07 22:12:33.441853
-1,condition1,0,0,568,369,677.3366961858777,30,False,False,932.638,2021-05-07 22:12:33.599717
-1,condition1,0,0,568,369,677.3366961858777,30,False,False,1066.15,2021-05-07 22:12:33.733231
-1,condition1,0,0,309,108,327.33010860597597,30,False,False,1467.3290000000006,2021-05-07 22:12:34.134410
-1,condition1,0,0,309,108,327.33010860597597,30,False,False,1707.14,2021-05-07 22:12:34.374221
-1,condition1,0,0,309,108,327.33010860597597,30,False,False,1835.72,2021-05-07 22:12:34.502801
-1,condition1,0,0,477,247,537.1573326316974,30,False,False,2094.0,2021-05-07 22:12:34.761080
-1,condition1,0,0,477,247,537.1573326316974,30,False,False,2208.768,2021-05-07 22:12:34.875854

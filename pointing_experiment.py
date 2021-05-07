@@ -12,7 +12,7 @@ from pointing_experiment_model import PointingExperimentModel
 
 
 class CircleWidget(QtWidgets.QWidget):
-    clicked = pyqtSignal()
+    clicked = pyqtSignal([QtCore.QPoint])
 
     def __init__(self, parent=None):
         super(CircleWidget, self).__init__(parent)
@@ -47,7 +47,7 @@ class CircleWidget(QtWidgets.QWidget):
 
     def mousePressEvent(self, event):
         if dist([self.radius, self.radius], [event.x(), event.y()]) <= self.radius:
-            self.clicked.emit()
+            self.clicked.emit(event.globalPos())
 
 
 class MainWindow(QtWidgets.QWidget):
@@ -56,7 +56,7 @@ class MainWindow(QtWidgets.QWidget):
         self.width = 800
         self.height = 600
         self.setGeometry(550, 200, 800, 600)
-        self.setWindowTitle('FittsLawTest')
+        self.setWindowTitle("FittsLawTest")
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.setMouseTracking(True)
 
@@ -81,6 +81,10 @@ class MainWindow(QtWidgets.QWidget):
         # circle.move(100, 100)
         # circle.clicked.connect(lambda: print("clicked"))
 
+    def __circle_clicked(self, position):
+        # circle = self.sender()
+        self.model.handle_circle_clicked(position)
+
     def create_circles(self, count, diameter):
         min_x_y = diameter
         max_x = self.width - diameter
@@ -102,11 +106,14 @@ class MainWindow(QtWidgets.QWidget):
             self.circles.append(circle)
             i += 1
 
+            circle.clicked.connect(self.__circle_clicked)
+
     def check_collision(self, current_item, items):
         # QtWidgets.QGraphicsItem.collidesWithItem
         for i in range(0, len(items)):
             if current_item.rect().intersects(items[i].rect()):
                 return True
+
         return False
 
     def genRandNum(self, min, max):
@@ -120,11 +127,6 @@ class MainWindow(QtWidgets.QWidget):
         # is only activated when no circle is clicked
         if event.button() == QtCore.Qt.LeftButton:
             self.model.handle_false_clicked(event.pos())
-            # tp = self.target_pos(self.model.current_target()[0])
-            # hit = self.model.register_click(tp, (event.x(), event.y()))
-            # if hit:
-            #     QtGui.QCursor.setPos(self.mapToGlobal(QtCore.QPoint(self.start_pos[0], self.start_pos[1])))
-            # self.update()
 
 
 def exit_program(message="Please give a valid .ini or .json file as arguments (-_-)\n"):

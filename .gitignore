@@ -3,3 +3,4 @@ __pycache__/
 .idea/
 fitts_law_test.py
 test_setup
+raw_log_data

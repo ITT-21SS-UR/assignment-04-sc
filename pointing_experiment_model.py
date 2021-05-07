@@ -152,4 +152,5 @@ class PointingExperimentModel(QObject):
         self.__write_to_csv(self.__create_row_data(mouse_position))
 
     def handle_circle_clicked(self, mouse_position):
-        print("circle clicked")
+        is_target = False  # TODO check if it is the target
+        self.__write_to_csv(self.__create_row_data(mouse_position, circle_clicked=True, is_target=is_target))
