@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 import configparser
 import json
 import os
@@ -21,24 +23,40 @@ class CircleWidget(QtWidgets.QWidget):
         self.setMouseTracking(True)
 
         self.radius = 0
+        self.is_target = False
+        self.target_color = QtGui.QColor("Red")
         self.color = QtGui.QColor("Black")
         self.setMinimumSize(50, 50)
-        self.setDiameter(50)
+        self.set_diameter(50)
 
-    def setColor(self, color):
+    def set_color(self, color):
+        if self.color == color:
+            return
+
         self.color = color
         self.update()
 
-    def setDiameter(self, diameter):
+    def set_diameter(self, diameter):
         self.radius = int(diameter / 2)
         self.setFixedSize(diameter, diameter)
+
+    def set_target(self, is_target):
+        self.is_target = is_target
+        self.update()
+
+    def is_target(self):
+        return self.is_target
 
     def paintEvent(self, event):
         painter = QtGui.QPainter()
         painter.begin(self)
 
-        painter.setPen(QtGui.QColor("Black"))
-        painter.setBrush(self.color)
+        if self.is_target:
+            painter.setPen(self.target_color)
+            painter.setBrush(self.target_color)
+        else:
+            painter.setPen(self.color)
+            painter.setBrush(self.color)
 
         rect = event.rect()
         painter.drawEllipse(rect.x(), rect.y(), rect.width() - 1, rect.height() - 1)
@@ -51,19 +69,27 @@ class CircleWidget(QtWidgets.QWidget):
 
 
 class MainWindow(QtWidgets.QWidget):
+    @staticmethod
+    def get_random_pos(max_x, max_y):
+        return (random.randint(0, max_x), random.randint(0, max_y))
+
     def __init__(self, config):
         super(MainWindow, self).__init__()
+
         self.width = 800
         self.height = 600
         self.setGeometry(550, 200, 800, 600)
         self.setWindowTitle("FittsLawTest")
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.setMouseTracking(True)
+        self.color_timer = QtCore.QTimer(self)
 
         self.circles = []
-        # self.circles.append(CircleWidget(self))
 
         self.__setup_ui()
+        self.color_timer.setInterval(100)
+        self.color_timer.timeout.connect(self.__on_timeout)
+        self.color_timer.start()
 
         self.model = PointingExperimentModel(config)
 
@@ -74,53 +100,59 @@ class MainWindow(QtWidgets.QWidget):
         self.setPalette(palette)
 
         self.text = "Please click on the target"
-        self.create_circles(30, 50)
-        # circle = self.circles[0]
-        # circle.setDiameter(100)
-        # circle.setColor(QtGui.QColor("Red"))
-        # circle.move(100, 100)
-        # circle.clicked.connect(lambda: print("clicked"))
+        self.create_circles(20, 100)
+        random.choice(self.circles).set_target(True)
+
+    def __on_timeout(self):
+        for circle in self.circles:
+            circle.set_color(QtGui.QColor("Black"))
+
+        random.choice(self.circles).set_color(QtGui.QColor("Orange"))
+        random.choice(self.circles).set_color(QtGui.QColor("Yellow"))
+
+        # palette = self.palette()
+
+        # if palette.color(QtGui.QPalette.Window) == QtGui.QColor("Orange"):
+        #     palette.setColor(QtGui.QPalette.Window, QtGui.QColor("Yellow"))
+        # else:
+        #     palette.setColor(QtGui.QPalette.Window, QtGui.QColor("Orange"))
+
+        # self.setPalette(palette)
+
 
     def __circle_clicked(self, position):
-        # circle = self.sender()
+        if self.sender().is_target:
+            print("ooops I did it again")
+
         self.model.handle_circle_clicked(position)
 
     def create_circles(self, count, diameter):
-        min_x_y = diameter
         max_x = self.width - diameter
         max_y = self.height - diameter
-        pos = []
 
-        i = 0
-        while i < count:
-            x = self.genRandNum(min_x_y, max_x)
-            y = self.genRandNum(min_x_y, max_y)
+        for i in range(0, count):
+            (x, y) = self.get_random_pos(max_x, max_y)
 
             circle = CircleWidget(self)
-            circle.setDiameter(diameter)
+            circle.set_diameter(diameter)
             circle.move(x, y)
 
-            if self.check_collision(circle, self.circles):
-                circle.destroy()
-
-            self.circles.append(circle)
-            i += 1
+            while self.has_collision(circle, self.circles):
+                (x, y) = self.get_random_pos(max_x, max_y)
+                circle.move(x, y)
 
             circle.clicked.connect(self.__circle_clicked)
+            self.circles.append(circle)
 
-    def check_collision(self, current_item, items):
-        # QtWidgets.QGraphicsItem.collidesWithItem
-        for i in range(0, len(items)):
-            if current_item.rect().intersects(items[i].rect()):
+    def has_collision(self, current_item, items):
+        for circle in items:
+            if current_item.geometry().intersects(circle.geometry()):
                 return True
 
         return False
 
-    def genRandNum(self, min, max):
-        return random.randint(min, max)
-
     def mouseMoveEvent(self, event):
-        # print(str(event.pos()))
+        # TODO(claudi) start timer
         pass
 
     def mousePressEvent(self, event):
@@ -174,14 +206,8 @@ if __name__ == '__main__':
     # Create the Qt Application
     app = QtWidgets.QApplication(sys.argv)
 
-    # circle = CircleWidget()
-    # circle.clicked.connect(lambda: print("circle clicked"))
-    # circle.setDiameter(500)
-    # circle.show()
-
     trial = MainWindow(test_config)
     trial.show()
-    # trial = CircleWidget(50, 50, 100, QtGui.QColor(10, 10, 10))
-
+ 
     # Run the main Qt loop
     sys.exit(app.exec_())
