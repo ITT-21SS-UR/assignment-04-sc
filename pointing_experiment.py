@@ -51,7 +51,7 @@ class CircleWidget(QtWidgets.QWidget):
 
 
 class MainWindow(QtWidgets.QWidget):
-    def __init__(self, test_config):
+    def __init__(self, config):
         super(MainWindow, self).__init__()
         self.width = 800
         self.height = 600
@@ -65,7 +65,7 @@ class MainWindow(QtWidgets.QWidget):
 
         self.__setup_ui()
 
-        model = PointingExperimentModel(test_config)
+        self.model = PointingExperimentModel(config)
 
     def __setup_ui(self):
         self.setAutoFillBackground(True)
@@ -115,6 +115,16 @@ class MainWindow(QtWidgets.QWidget):
     def mouseMoveEvent(self, event):
         # print(str(event.pos()))
         pass
+
+    def mousePressEvent(self, event):
+        # is only activated when no circle is clicked
+        if event.button() == QtCore.Qt.LeftButton:
+            self.model.handle_false_clicked(event.pos())
+            # tp = self.target_pos(self.model.current_target()[0])
+            # hit = self.model.register_click(tp, (event.x(), event.y()))
+            # if hit:
+            #     QtGui.QCursor.setPos(self.mapToGlobal(QtCore.QPoint(self.start_pos[0], self.start_pos[1])))
+            # self.update()
 
 
 def exit_program(message="Please give a valid .ini or .json file as arguments (-_-)\n"):
