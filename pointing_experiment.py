@@ -22,41 +22,41 @@ class CircleWidget(QtWidgets.QWidget):
         self.setAttribute(QtCore.Qt.WA_StaticContents)
         self.setMouseTracking(True)
 
-        self.radius = 0
-        self.is_target = False
-        self.target_color = QtGui.QColor("Red")
-        self.color = QtGui.QColor("Black")
+        self.__radius = 0
+        self.__is_target = False
+        self.__target_color = QtGui.QColor("Red")
+        self.__color = QtGui.QColor("Black")
         self.setMinimumSize(50, 50)
         self.set_diameter(50)
 
     def set_color(self, color):
-        if self.color == color:
+        if self.__color == color:
             return
 
-        self.color = color
+        self.__color = color
         self.update()
 
     def set_diameter(self, diameter):
-        self.radius = int(diameter / 2)
+        self.__radius = int(diameter / 2)
         self.setFixedSize(diameter, diameter)
 
     def set_target(self, is_target):
-        self.is_target = is_target
+        self.__is_target = is_target
         self.update()
 
     def is_target(self):
-        return self.is_target
+        return self.__is_target
 
     def paintEvent(self, event):
         painter = QtGui.QPainter()
         painter.begin(self)
 
-        if self.is_target:
-            painter.setPen(self.target_color)
-            painter.setBrush(self.target_color)
+        if self.__is_target:
+            painter.setPen(self.__target_color)
+            painter.setBrush(self.__target_color)
         else:
-            painter.setPen(self.color)
-            painter.setBrush(self.color)
+            painter.setPen(self.__color)
+            painter.setBrush(self.__color)
 
         rect = event.rect()
         painter.drawEllipse(rect.x(), rect.y(), rect.width() - 1, rect.height() - 1)
@@ -64,7 +64,8 @@ class CircleWidget(QtWidgets.QWidget):
         painter.end()
 
     def mousePressEvent(self, event):
-        if dist([self.radius, self.radius], [event.x(), event.y()]) <= self.radius:
+        if event.button() == QtCore.Qt.LeftButton \
+                and dist([self.__radius, self.__radius], [event.x(), event.y()]) <= self.__radius:
             self.clicked.emit(event.globalPos())
 
 
@@ -76,22 +77,22 @@ class MainWindow(QtWidgets.QWidget):
     def __init__(self, config):
         super(MainWindow, self).__init__()
 
-        self.width = 800
-        self.height = 600
-        self.setGeometry(550, 200, 800, 600)
+        self.__width = 800
+        self.__height = 600
+        self.setGeometry(550, 200, self.__width, self.__height)
         self.setWindowTitle("FittsLawTest")
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.setMouseTracking(True)
-        self.color_timer = QtCore.QTimer(self)
+        self.__color_timer = QtCore.QTimer(self)
 
-        self.circles = []
+        self.__circles = []
 
         self.__setup_ui()
-        self.color_timer.setInterval(100)
-        self.color_timer.timeout.connect(self.__on_timeout)
-        self.color_timer.start()
+        self.__color_timer.setInterval(100)
+        self.__color_timer.timeout.connect(self.__on_timeout)
+        self.__color_timer.start()
 
-        self.model = PointingExperimentModel(config)
+        self.__model = PointingExperimentModel(config)
 
     def __setup_ui(self):
         self.setAutoFillBackground(True)
@@ -100,15 +101,15 @@ class MainWindow(QtWidgets.QWidget):
         self.setPalette(palette)
 
         self.text = "Please click on the target"
-        self.create_circles(20, 100)
-        random.choice(self.circles).set_target(True)
+        self.__create_circles(20, 100)
+        random.choice(self.__circles).set_target(True)
 
     def __on_timeout(self):
-        for circle in self.circles:
+        for circle in self.__circles:
             circle.set_color(QtGui.QColor("Black"))
 
-        random.choice(self.circles).set_color(QtGui.QColor("Orange"))
-        random.choice(self.circles).set_color(QtGui.QColor("Yellow"))
+        random.choice(self.__circles).set_color(QtGui.QColor("Orange"))
+        random.choice(self.__circles).set_color(QtGui.QColor("Yellow"))
 
         # palette = self.palette()
 
@@ -119,16 +120,12 @@ class MainWindow(QtWidgets.QWidget):
 
         # self.setPalette(palette)
 
-
     def __circle_clicked(self, position):
-        if self.sender().is_target:
-            print("ooops I did it again")
+        self.__model.handle_circle_clicked(position, self.sender().is_target())
 
-        self.model.handle_circle_clicked(position)
-
-    def create_circles(self, count, diameter):
-        max_x = self.width - diameter
-        max_y = self.height - diameter
+    def __create_circles(self, count, diameter):
+        max_x = self.__width - diameter
+        max_y = self.__height - diameter
 
         for i in range(0, count):
             (x, y) = self.get_random_pos(max_x, max_y)
@@ -137,28 +134,27 @@ class MainWindow(QtWidgets.QWidget):
             circle.set_diameter(diameter)
             circle.move(x, y)
 
-            while self.has_collision(circle):
+            while self.__has_collision(circle):
                 (x, y) = self.get_random_pos(max_x, max_y)
                 circle.move(x, y)
 
             circle.clicked.connect(self.__circle_clicked)
-            self.circles.append(circle)
+            self.__circles.append(circle)
 
-    def has_collision(self, new_circle):
-        for circle in self.circles:
+    def __has_collision(self, new_circle):
+        for circle in self.__circles:
             if new_circle.geometry().intersects(circle.geometry()):
                 return True
 
         return False
 
     def mouseMoveEvent(self, event):
-        # TODO(claudi) start timer
-        pass
+        self.__model.start_timer()
 
     def mousePressEvent(self, event):
         # is only activated when no circle is clicked
         if event.button() == QtCore.Qt.LeftButton:
-            self.model.handle_false_clicked(event.pos())
+            self.__model.handle_false_clicked(event.pos())
 
 
 def exit_program(message="Please give a valid .ini or .json file as arguments (-_-)\n"):
@@ -203,11 +199,9 @@ if __name__ == '__main__':
     # TODO check if file contains correct and all relevant data?
     test_config = read_test_config()
 
-    # Create the Qt Application
     app = QtWidgets.QApplication(sys.argv)
 
     trial = MainWindow(test_config)
     trial.show()
- 
-    # Run the main Qt loop
+
     sys.exit(app.exec_())

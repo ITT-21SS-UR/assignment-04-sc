@@ -4,3 +4,4 @@ __pycache__/
 fitts_law_test.py
 test_setup
 raw_log_data
+experiment/.ipynb_checkpoints/

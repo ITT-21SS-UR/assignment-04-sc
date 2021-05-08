@@ -77,7 +77,7 @@ class PointingExperimentModel(QObject):
 
         self.__set_condition(Condition.CONDITION_1)
 
-        self.__start_time = datetime.now()  # TODO when it is relevant update the start time self.INVALID_TIME
+        self.__start_time = self.INVALID_TIME
         self.__end_time = self.INVALID_TIME
 
     def __set_condition(self, condition):
@@ -90,7 +90,6 @@ class PointingExperimentModel(QObject):
                       + ".csv"
 
     def __calculate_distance_to_start_position(self, mouse_position):
-        # https://stackoverflow.com/questions/5228383/how-do-i-find-the-distance-between-two-points
         return math.hypot(
             mouse_position.x() - self.__mouse_start_position.x(),
             mouse_position.y() - self.__mouse_start_position.y()
@@ -107,7 +106,6 @@ class PointingExperimentModel(QObject):
             return self.INVALID_TIME
 
     def __create_row_data(self, mouse_position, circle_clicked=False, is_target=False):
-        # TODO only use default values when necessary; some are only tmp
         return {
             self.PARTICIPANT_ID: self.config[self.PARTICIPANT_ID],
             self.CONDITION: self.__condition.value,
@@ -126,6 +124,7 @@ class PointingExperimentModel(QObject):
 
     def __write_to_csv(self, row_data):
         # TODO The script outputs all necessary information on stdout in CSV format
+        # sys.stdout.write(row_data)
         if os.path.isfile(self.__file):
             data_frame = pd.read_csv(self.__file)
         else:
@@ -146,11 +145,15 @@ class PointingExperimentModel(QObject):
             ])
 
         data_frame = data_frame.append(row_data, ignore_index=True)
+        # csv.writer(sys.stdout)
         data_frame.to_csv(self.__file, index=False)
 
     def handle_false_clicked(self, mouse_position):
         self.__write_to_csv(self.__create_row_data(mouse_position))
 
-    def handle_circle_clicked(self, mouse_position):
-        is_target = False  # TODO check if it is the target
+    def handle_circle_clicked(self, mouse_position, is_target):
         self.__write_to_csv(self.__create_row_data(mouse_position, circle_clicked=True, is_target=is_target))
+
+    def start_timer(self):
+        if self.__start_time == self.INVALID_TIME:
+            self.__start_time = datetime.now()  # TODO when it is relevant update the start time
