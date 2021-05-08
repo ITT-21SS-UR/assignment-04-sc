@@ -1,9 +1,8 @@
 import math
-import os
+import sys
 from datetime import datetime
 from enum import Enum
 
-import pandas as pd
 from PyQt5 import QtCore
 from PyQt5.QtCore import QObject
 
@@ -49,11 +48,13 @@ class PointingExperimentModel(QObject):
     DISTANCE_TO_START_POSITION = "distance_to_start_position"
 
     CIRCLE_CLICKED = "is_circle_clicked"
-    IS_TARGET = "is_correct_target"
+    IS_TARGET = "is_target"
 
     REACTION_TIME = "reaction_time_in_ms"
-    TASK_COMPLETION_TIME = "task_completion_time"  # TODO when should it be started and logged
+    # TASK_COMPLETION_TIME = "task_completion_time"  # TODO when should it be started and logged
     TIMESTAMP = "timestamp"
+    ROUND = "round"
+    # POINTER_TYPE = "pointer_type"  # TODO
 
     # remaining constants
     INVALID_TIME = "NaN"
@@ -63,31 +64,47 @@ class PointingExperimentModel(QObject):
 
         self.config = config
 
-        self.__create_log_directory()
         self.__reset_model()
-
-    def __create_log_directory(self):
-        self.__log_directory = "raw_log_data"
-
-        if not os.path.isdir(self.__log_directory):
-            os.makedirs(self.__log_directory)
+        self.__stdout_csv_column_names()
 
     def __reset_model(self):
+        self.__round = 0
+
         self.__mouse_start_position = QtCore.QPoint(0, 0)  # TODO start position
 
-        self.__set_condition(Condition.CONDITION_1)
+        self.__condition = Condition.CONDITION_1
 
         self.__start_time = self.INVALID_TIME
         self.__end_time = self.INVALID_TIME
 
-    def __set_condition(self, condition):
-        self.__condition = condition
-        self.__update_file()
+    def __get_csv_columns(self):
+        return [
+            self.PARTICIPANT_ID,
+            self.CONDITION,
+            self.MOUSE_START_POSITION_X,
+            self.MOUSE_START_POSITION_Y,
+            self.MOUSE_CLICKED_POSITION_X,
+            self.MOUSE_CLICKED_POSITION_Y,
+            self.DISTANCE_TO_START_POSITION,
+            self.CIRCLE_COUNT,
+            self.CIRCLE_CLICKED,
+            self.IS_TARGET,
+            self.REACTION_TIME,
+            # self.TASK_COMPLETION_TIME,  # TODO when should it be started and logged
+            self.TIMESTAMP,
+            self.ROUND
+            # POINTER_TYPE  # TODO
+        ]
 
-    def __update_file(self):
-        self.__file = "./" + self.__log_directory + "/id_" + str(self.config[self.PARTICIPANT_ID]) \
-                      + "_trial_" + self.__condition.value \
-                      + ".csv"
+    def __stdout_csv_column_names(self):
+        for column_name in self.__get_csv_columns():  # TODO separate function
+            if column_name == self.__get_csv_columns()[-1]:
+                sys.stdout.write(str(column_name))
+            else:
+                sys.stdout.write(str(column_name) + ", ")
+
+        sys.stdout.write("\n")
+        sys.stdout.flush()
 
     def __calculate_distance_to_start_position(self, mouse_position):
         return math.hypot(
@@ -96,8 +113,6 @@ class PointingExperimentModel(QObject):
         )
 
     def __calculate_reaction_time(self):
-        self.__end_time = datetime.now()  # TODO at another place
-
         try:
             return (self.__end_time - self.__start_time).total_seconds() * 1000
         except AttributeError:
@@ -119,41 +134,44 @@ class PointingExperimentModel(QObject):
             self.IS_TARGET: is_target,
             self.REACTION_TIME: self.__calculate_reaction_time(),
             # self.TASK_COMPLETION_TIME,  # TODO when should it be started and logged
-            self.TIMESTAMP: datetime.now()
+            self.TIMESTAMP: datetime.now(),
+            self.ROUND: self.__round  # TODO round number or special feat
+            # POINTER_TYPE = self.__pointer_type  # TODO
         }
 
-    def __write_to_csv(self, row_data):
-        # TODO The script outputs all necessary information on stdout in CSV format
-        # sys.stdout.write(row_data)
-        if os.path.isfile(self.__file):
-            data_frame = pd.read_csv(self.__file)
-        else:
-            data_frame = pd.DataFrame(columns=[
-                self.PARTICIPANT_ID,
-                self.CONDITION,
-                self.MOUSE_START_POSITION_X,
-                self.MOUSE_START_POSITION_Y,
-                self.MOUSE_CLICKED_POSITION_X,
-                self.MOUSE_CLICKED_POSITION_Y,
-                self.DISTANCE_TO_START_POSITION,
-                self.CIRCLE_COUNT,
-                self.CIRCLE_CLICKED,
-                self.IS_TARGET,
-                self.REACTION_TIME,
-                # self.TASK_COMPLETION_TIME,  # TODO when should it be started and logged
-                self.TIMESTAMP
-            ])
+    @staticmethod
+    def __write_to_stdout_in_csv_format(row_data):
+        row_data_values = list(row_data.values())
+        values_length = len(row_data_values)
 
-        data_frame = data_frame.append(row_data, ignore_index=True)
-        # csv.writer(sys.stdout)
-        data_frame.to_csv(self.__file, index=False)
+        for i in range(values_length):
+            value = str(row_data_values[i])
+
+            if i == values_length - 1:
+                sys.stdout.write(value)
+            else:
+                sys.stdout.write(value + ", ")
+
+        sys.stdout.write("\n")
+        sys.stdout.flush()
 
     def handle_false_clicked(self, mouse_position):
-        self.__write_to_csv(self.__create_row_data(mouse_position))
+        self.__write_to_stdout_in_csv_format(self.__create_row_data(mouse_position))
 
     def handle_circle_clicked(self, mouse_position, is_target):
-        self.__write_to_csv(self.__create_row_data(mouse_position, circle_clicked=True, is_target=is_target))
+        if is_target:  # TODO when it is relevant update start time
+            self.__round += 1
+            self.__end_time = datetime.now()
+            self.__write_to_stdout_in_csv_format(
+                self.__create_row_data(mouse_position, circle_clicked=True, is_target=is_target))
+
+            self.__start_time = self.INVALID_TIME
+            self.__end_time = self.INVALID_TIME
+
+        else:
+            self.__end_time = self.INVALID_TIME
+            self.__write_to_stdout_in_csv_format(self.__create_row_data(mouse_position, circle_clicked=True))
 
     def start_timer(self):
         if self.__start_time == self.INVALID_TIME:
-            self.__start_time = datetime.now()  # TODO when it is relevant update the start time
+            self.__start_time = datetime.now()  # TODO when it is relevant update start time

@@ -5,3 +5,4 @@ fitts_law_test.py
 test_setup
 raw_log_data
 experiment/.ipynb_checkpoints/
+experiment/test.csv
