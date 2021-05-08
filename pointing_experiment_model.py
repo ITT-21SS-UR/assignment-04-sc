@@ -37,6 +37,7 @@ class PointingExperimentModel(QObject):
     CIRCLE_MAX_SIZE = "circle_max_size"
     CIRCLE_COUNT = "circle_count"
     MAX_REPETITIONS = "max_repetitions"
+    TARGET_POSITIONS = "target_positions"
     TOTAL_RUNS = "total_runs"
 
     # remaining csv column names

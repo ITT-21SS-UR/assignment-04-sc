@@ -36,6 +36,13 @@ class CircleWidget(QtWidgets.QWidget):
         self.__color = color
         self.update()
 
+    def set_target_color(self, target_color):
+        if self.__target_color == target_color:
+            return
+
+        self.__target_color = target_color
+        self.update()
+
     def set_diameter(self, diameter):
         self.__radius = int(diameter / 2)
         self.setFixedSize(diameter, diameter)
@@ -77,36 +84,47 @@ class MainWindow(QtWidgets.QWidget):
     def __init__(self, config):
         super(MainWindow, self).__init__()
 
-        self.__width = 800
-        self.__height = 600
-        self.setGeometry(550, 200, self.__width, self.__height)
+        self.setFixedSize(800, 600)
+        self.move(QtWidgets.qApp.desktop().availableGeometry(self).center() - self.rect().center())
+
         self.setWindowTitle("FittsLawTest")
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.setMouseTracking(True)
-        self.__color_timer = QtCore.QTimer(self)
 
         self.__circles = []
-
-        self.__setup_ui()
+        self.__target_positions = []
+        self.__current_target = 0
+       
+        self.__color_timer = QtCore.QTimer(self)
         self.__color_timer.setInterval(100)
         self.__color_timer.timeout.connect(self.__on_timeout)
-        self.__color_timer.start()
 
         self.__model = PointingExperimentModel(config)
+        self.__setup_target_positions()
+
+        self.__setup_ui()
 
     def __setup_ui(self):
         self.setAutoFillBackground(True)
         palette = QtGui.QGuiApplication.palette()
-        palette.setColor(QtGui.QPalette.Window, QtGui.QColor("Orange"))
+        backgroud_color = QtGui.QColor(self.__model.config[self.__model.COLOR_BACKGROUND])
+        palette.setColor(QtGui.QPalette.Window, backgroud_color)
         self.setPalette(palette)
 
-        self.text = "Please click on the target"
-        self.__create_circles(20, 100)
-        random.choice(self.__circles).set_target(True)
+        self.__show_intro()
+
+    def __show_intro(self):
+        QtWidgets.QMessageBox.information(self, "Introduction", "Click on the red circle")
+        self.__setup_circles()
+
+    def __setup_target_positions(self):
+        self.__target_positions = self.__model.config[self.__model.TARGET_POSITIONS]
+        random.shuffle(self.__target_positions)
 
     def __on_timeout(self):
         for circle in self.__circles:
-            circle.set_color(QtGui.QColor("Black"))
+            circle_color = QtGui.QColor(self.__model.config[self.__model.COLOR_CIRCLES])
+            circle.set_color(circle_color)
 
         random.choice(self.__circles).set_color(QtGui.QColor("Orange"))
         random.choice(self.__circles).set_color(QtGui.QColor("Yellow"))
@@ -123,11 +141,49 @@ class MainWindow(QtWidgets.QWidget):
     def __circle_clicked(self, position):
         self.__model.handle_circle_clicked(position, self.sender().is_target())
 
-    def __create_circles(self, count, diameter):
-        max_x = self.__width - diameter
-        max_y = self.__height - diameter
+        if self.sender().is_target():
+            self.__setup_circles()
 
-        for i in range(0, count):
+    def __setup_circles(self):
+        if self.__circles:
+            self.__color_timer.stop()
+
+            for circle in self.__circles:
+                circle.setParent(None)
+                circle.deleteLater()
+
+            self.__circles.clear()
+            self.__current_target = (self.__current_target + 1) % len(self.__target_positions)
+
+        self.__create_circles(20, 100)
+
+        circle_color = QtGui.QColor(self.__model.config[self.__model.COLOR_CIRCLES])
+        target_color = QtGui.QColor(self.__model.config[self.__model.COLOR_TARGET])
+
+        for circle in self.__circles:
+            circle.set_color(circle_color)
+            circle.set_target_color(target_color)
+            circle.show()
+
+        self.update()
+        self.__color_timer.start()
+
+    def __create_circles(self, count, diameter):
+        max_x = self.width() - diameter
+        max_y = self.height() - diameter
+
+        # for i in range(0, 5):
+        #     print(str(self.get_random_pos(max_x, max_y)))
+
+        target = CircleWidget(self)
+        target.set_diameter(diameter)
+        target.set_target(True)
+        target_pos = self.__target_positions[self.__current_target]
+        target.move(target_pos[0], target_pos[1])
+        target.clicked.connect(self.__circle_clicked)
+        self.__circles.append(target)
+
+        for i in range(0, count - 1):
             (x, y) = self.get_random_pos(max_x, max_y)
 
             circle = CircleWidget(self)
