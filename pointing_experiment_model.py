@@ -1,4 +1,5 @@
 import math
+import random
 import sys
 from datetime import datetime
 from enum import Enum
@@ -35,10 +36,10 @@ class PointingExperimentModel(QObject):
     COLOR_TARGET = "color_target"
     CIRCLE_MIN_SIZE = "circle_min_size"
     CIRCLE_MAX_SIZE = "circle_max_size"
-    CIRCLE_COUNT = "circle_count"
-    MAX_REPETITIONS = "max_repetitions"
+    CIRCLE_SIZE = "circle_size"
     TARGET_POSITIONS = "target_positions"
-    TOTAL_RUNS = "total_runs"
+    CONDITIONS = "conditions"
+    DISTRACTION = "distraction"
 
     # remaining csv column names
     CONDITION = "condition"
@@ -49,6 +50,7 @@ class PointingExperimentModel(QObject):
     MOUSE_CLICKED_POSITION_Y = "mouse_clicked_y_position"
     DISTANCE_TO_START_POSITION = "distance_to_start_position"
 
+    CIRCLE_COUNT = "circle_count"
     CIRCLE_CLICKED = "is_circle_clicked"
     IS_TARGET = "is_target"
 
@@ -80,6 +82,15 @@ class PointingExperimentModel(QObject):
 
         self.config = config
 
+        conditions = self.config[self.CONDITIONS]
+        if not conditions:
+            print("config: no conditions found")
+            sys.exit(1)
+
+        self.__condition = conditions[0]
+        self.__target_positions = []
+        self.__target_position_index = 0
+
         self.__reset_model()
         self.__stdout_csv_column_names()
 
@@ -89,10 +100,14 @@ class PointingExperimentModel(QObject):
 
         self.__mouse_start_position = QtCore.QPoint(0, 0)  # TODO start position
 
-        self.__condition = Condition.CONDITION_1
-
         self.__start_time = self.INVALID_TIME
         self.__end_time = self.INVALID_TIME
+
+        self.__setup_target_positions()
+
+    def __setup_target_positions(self):
+        self.__target_positions = self.config[self.TARGET_POSITIONS]
+        random.shuffle(self.__target_positions)
 
     def __get_csv_columns(self):
         return [
@@ -139,20 +154,58 @@ class PointingExperimentModel(QObject):
     def __create_row_data(self, mouse_position, circle_clicked=False, is_target=False):
         return {
             self.PARTICIPANT_ID: self.config[self.PARTICIPANT_ID],
-            self.CONDITION: self.__condition.value,
+            self.CONDITION: self.__condition["id"],
             self.POINTER_TYPE: self.__pointer_type.value,
             self.MOUSE_START_POSITION_X: self.__mouse_start_position.x(),
             self.MOUSE_START_POSITION_Y: self.__mouse_start_position.y(),
             self.MOUSE_CLICKED_POSITION_X: mouse_position.x(),
             self.MOUSE_CLICKED_POSITION_Y: mouse_position.y(),
             self.DISTANCE_TO_START_POSITION: self.__calculate_distance_to_start_position(mouse_position),
-            self.CIRCLE_COUNT: self.config[self.CIRCLE_COUNT],
+            self.CIRCLE_COUNT: self.get_circle_count(),
             self.CIRCLE_CLICKED: circle_clicked,
             self.IS_TARGET: is_target,
             self.TASK_COMPLETION_TIME: self.__calculate_task_time(),
             self.TIMESTAMP: datetime.now(),
             self.ROUND: self.__round
         }
+
+    def get_background_color(self):
+        return self.config[self.COLOR_BACKGROUND]
+
+    def get_circle_color(self):
+        return self.config[self.COLOR_CIRCLES]
+
+    def get_target_color(self):
+        return self.config[self.COLOR_TARGET]
+
+    def get_target_position(self):
+        return self.__target_positions[self.__target_position_index]
+
+    def get_circle_size(self):
+        return self.__condition[self.CIRCLE_SIZE]
+
+    def get_circle_count(self):
+        return self.__condition[self.CIRCLE_COUNT]
+
+    def get_distraction(self):
+        return self.__condition[self.DISTRACTION]
+
+    def select_next_target(self):
+        self.__target_position_index += 1
+
+        if not (self.__target_position_index < len(self.__target_positions)):
+            self.__target_position_index = 0
+            random.shuffle(self.__target_positions)
+            
+            conditions = self.config[self.CONDITIONS]
+            index = conditions.index(self.__condition) + 1
+
+            if not (index < len(conditions)):
+                return False
+
+            self.__condition = conditions[index]
+        
+        return True
 
     def handle_false_clicked(self, mouse_position):
         self.__write_to_stdout_in_csv_format(self.__create_row_data(mouse_position))

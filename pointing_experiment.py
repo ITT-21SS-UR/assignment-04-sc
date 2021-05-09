@@ -93,51 +93,47 @@ class MainWindow(QtWidgets.QWidget):
         self.setMouseTracking(True)
 
         self.__circles = []
-        self.__target_positions = []
-        self.__current_target = 0
+        self.__model = PointingExperimentModel(config)
 
         self.__color_timer = QtCore.QTimer(self)
         self.__color_timer.setInterval(100)
         self.__color_timer.timeout.connect(self.__on_timeout)
-
-        self.__model = PointingExperimentModel(config)
-        self.__setup_target_positions()
+        self.__enable_background_flicker = False
 
         self.__setup_ui()
 
     def __setup_ui(self):
         self.setAutoFillBackground(True)
         palette = QtGui.QGuiApplication.palette()
-        background_color = QtGui.QColor(self.__model.config[self.__model.COLOR_BACKGROUND])
+        background_color = QtGui.QColor(self.__model.get_background_color())
         palette.setColor(QtGui.QPalette.Window, background_color)
         self.setPalette(palette)
 
         self.__show_intro()
 
     def __show_intro(self):
-        QtWidgets.QMessageBox.information(self, "Introduction", "Click on the red circle")
+        target_color = self.__model.get_target_color().lower()
+        QtWidgets.QMessageBox.information(self, self.windowTitle(), "Click on the {0} circle".format(target_color))
         self.__setup_circles()
-
-    def __setup_target_positions(self):
-        self.__target_positions = self.__model.config[self.__model.TARGET_POSITIONS]
-        random.shuffle(self.__target_positions)
 
     def __on_timeout(self):
         for circle in self.__circles:
-            circle_color = QtGui.QColor(self.__model.config[self.__model.COLOR_CIRCLES])
+            circle_color = QtGui.QColor(self.__model.get_circle_color())
             circle.set_color(circle_color)
 
-        random.choice(self.__circles).set_color(QtGui.QColor("Orange"))
+        background_color = QtGui.QColor(self.__model.get_background_color())
+        random.choice(self.__circles).set_color(background_color)
         random.choice(self.__circles).set_color(QtGui.QColor("Yellow"))
 
-        # palette = self.palette()
+        if self.__enable_background_flicker:
+            palette = self.palette()
 
-        # if palette.color(QtGui.QPalette.Window) == QtGui.QColor("Orange"):
-        #     palette.setColor(QtGui.QPalette.Window, QtGui.QColor("Yellow"))
-        # else:
-        #     palette.setColor(QtGui.QPalette.Window, QtGui.QColor("Orange"))
+            if palette.color(QtGui.QPalette.Window) == background_color:
+                palette.setColor(QtGui.QPalette.Window, QtGui.QColor("Yellow"))
+            else:
+                palette.setColor(QtGui.QPalette.Window, background_color)
 
-        # self.setPalette(palette)
+            self.setPalette(palette)
 
     def __circle_clicked(self, position):
         self.__model.handle_circle_clicked(position, self.sender().is_target())
@@ -154,12 +150,15 @@ class MainWindow(QtWidgets.QWidget):
                 circle.deleteLater()
 
             self.__circles.clear()
-            self.__current_target = (self.__current_target + 1) % len(self.__target_positions)
+            if not self.__model.select_next_target():
+                QtWidgets.QMessageBox.information(self, self.windowTitle(), "Experiment finished!")
+                QtWidgets.qApp.quit()
+                return
 
-        self.__create_circles(20, 100)
+        self.__create_circles(self.__model.get_circle_count(), self.__model.get_circle_size())
 
-        circle_color = QtGui.QColor(self.__model.config[self.__model.COLOR_CIRCLES])
-        target_color = QtGui.QColor(self.__model.config[self.__model.COLOR_TARGET])
+        circle_color = QtGui.QColor(self.__model.get_circle_color())
+        target_color = QtGui.QColor(self.__model.get_target_color())
 
         for circle in self.__circles:
             circle.set_color(circle_color)
@@ -167,6 +166,21 @@ class MainWindow(QtWidgets.QWidget):
             circle.show()
 
         self.update()
+        self.__setup_distraction()
+        # QtGui.QCursor.setPos(self.mapToGlobal(self.rect().bottomLeft()))
+
+    def __setup_distraction(self):
+        distraction = self.__model.get_distraction()
+        if distraction == "none":
+            return
+
+        if distraction == "background_flicker":
+            self.__enable_background_flicker = True
+            self.__color_timer.setInterval(100)
+        elif distraction == "circle_flicker":
+            self.__enable_background_flicker = False
+            self.__color_timer.setInterval(50)
+
         self.__color_timer.start()
 
     def __create_circles(self, count, diameter):
@@ -179,7 +193,7 @@ class MainWindow(QtWidgets.QWidget):
         target = CircleWidget(self)
         target.set_diameter(diameter)
         target.set_target(True)
-        target_pos = self.__target_positions[self.__current_target]
+        target_pos = self.__model.get_target_position()
         target.move(target_pos[0], target_pos[1])
         target.clicked.connect(self.__circle_clicked)
         self.__circles.append(target)
