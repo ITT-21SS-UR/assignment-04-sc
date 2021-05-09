@@ -26,6 +26,7 @@ class CircleWidget(QtWidgets.QWidget):
         self.__is_target = False
         self.__target_color = QtGui.QColor("Red")
         self.__color = QtGui.QColor("Black")
+
         self.setMinimumSize(50, 50)
         self.set_diameter(50)
 
@@ -79,7 +80,7 @@ class CircleWidget(QtWidgets.QWidget):
 class MainWindow(QtWidgets.QWidget):
     @staticmethod
     def get_random_pos(max_x, max_y):
-        return (random.randint(0, max_x), random.randint(0, max_y))
+        return random.randint(0, max_x), random.randint(0, max_y)
 
     def __init__(self, config):
         super(MainWindow, self).__init__()
@@ -94,7 +95,7 @@ class MainWindow(QtWidgets.QWidget):
         self.__circles = []
         self.__target_positions = []
         self.__current_target = 0
-       
+
         self.__color_timer = QtCore.QTimer(self)
         self.__color_timer.setInterval(100)
         self.__color_timer.timeout.connect(self.__on_timeout)
@@ -107,8 +108,8 @@ class MainWindow(QtWidgets.QWidget):
     def __setup_ui(self):
         self.setAutoFillBackground(True)
         palette = QtGui.QGuiApplication.palette()
-        backgroud_color = QtGui.QColor(self.__model.config[self.__model.COLOR_BACKGROUND])
-        palette.setColor(QtGui.QPalette.Window, backgroud_color)
+        background_color = QtGui.QColor(self.__model.config[self.__model.COLOR_BACKGROUND])
+        palette.setColor(QtGui.QPalette.Window, background_color)
         self.setPalette(palette)
 
         self.__show_intro()
@@ -208,7 +209,7 @@ class MainWindow(QtWidgets.QWidget):
         self.__model.start_timer()
 
     def mousePressEvent(self, event):
-        # is only activated when no circle is clicked
+        # is only called when background is clicked
         if event.button() == QtCore.Qt.LeftButton:
             self.__model.handle_false_clicked(event.pos())
 
@@ -252,7 +253,7 @@ def read_test_config():
 
 
 if __name__ == '__main__':
-    # TODO check if file contains correct and all relevant data?
+    # TODO check if file contains correct and all relevant data; at the end check if a key is missing?
     test_config = read_test_config()
 
     app = QtWidgets.QApplication(sys.argv)

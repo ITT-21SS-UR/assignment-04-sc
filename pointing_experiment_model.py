@@ -42,6 +42,7 @@ class PointingExperimentModel(QObject):
 
     # remaining csv column names
     CONDITION = "condition"
+    POINTER_TYPE = "pointer_type"
     MOUSE_START_POSITION_X = "mouse_start_x_position"
     MOUSE_START_POSITION_Y = "mouse_start_y_position"
     MOUSE_CLICKED_POSITION_X = "mouse_clicked_x_position"
@@ -51,94 +52,12 @@ class PointingExperimentModel(QObject):
     CIRCLE_CLICKED = "is_circle_clicked"
     IS_TARGET = "is_target"
 
-    REACTION_TIME = "reaction_time_in_ms"
-    # TASK_COMPLETION_TIME = "task_completion_time"  # TODO when should it be started and logged
+    TASK_COMPLETION_TIME = "task_completion_time_in_ms"
     TIMESTAMP = "timestamp"
     ROUND = "round"
-    # POINTER_TYPE = "pointer_type"  # TODO
 
     # remaining constants
     INVALID_TIME = "NaN"
-
-    def __init__(self, config):
-        super().__init__()
-
-        self.config = config
-
-        self.__reset_model()
-        self.__stdout_csv_column_names()
-
-    def __reset_model(self):
-        self.__round = 0
-
-        self.__mouse_start_position = QtCore.QPoint(0, 0)  # TODO start position
-
-        self.__condition = Condition.CONDITION_1
-
-        self.__start_time = self.INVALID_TIME
-        self.__end_time = self.INVALID_TIME
-
-    def __get_csv_columns(self):
-        return [
-            self.PARTICIPANT_ID,
-            self.CONDITION,
-            self.MOUSE_START_POSITION_X,
-            self.MOUSE_START_POSITION_Y,
-            self.MOUSE_CLICKED_POSITION_X,
-            self.MOUSE_CLICKED_POSITION_Y,
-            self.DISTANCE_TO_START_POSITION,
-            self.CIRCLE_COUNT,
-            self.CIRCLE_CLICKED,
-            self.IS_TARGET,
-            self.REACTION_TIME,
-            # self.TASK_COMPLETION_TIME,  # TODO when should it be started and logged
-            self.TIMESTAMP,
-            self.ROUND
-            # POINTER_TYPE  # TODO
-        ]
-
-    def __stdout_csv_column_names(self):
-        for column_name in self.__get_csv_columns():  # TODO separate function
-            if column_name == self.__get_csv_columns()[-1]:
-                sys.stdout.write(str(column_name))
-            else:
-                sys.stdout.write(str(column_name) + ", ")
-
-        sys.stdout.write("\n")
-        sys.stdout.flush()
-
-    def __calculate_distance_to_start_position(self, mouse_position):
-        return math.hypot(
-            mouse_position.x() - self.__mouse_start_position.x(),
-            mouse_position.y() - self.__mouse_start_position.y()
-        )
-
-    def __calculate_reaction_time(self):
-        try:
-            return (self.__end_time - self.__start_time).total_seconds() * 1000
-        except AttributeError:
-            return self.INVALID_TIME
-        except TypeError:
-            return self.INVALID_TIME
-
-    def __create_row_data(self, mouse_position, circle_clicked=False, is_target=False):
-        return {
-            self.PARTICIPANT_ID: self.config[self.PARTICIPANT_ID],
-            self.CONDITION: self.__condition.value,
-            self.MOUSE_START_POSITION_X: self.__mouse_start_position.x(),
-            self.MOUSE_START_POSITION_Y: self.__mouse_start_position.y(),
-            self.MOUSE_CLICKED_POSITION_X: mouse_position.x(),
-            self.MOUSE_CLICKED_POSITION_Y: mouse_position.y(),
-            self.DISTANCE_TO_START_POSITION: self.__calculate_distance_to_start_position(mouse_position),
-            self.CIRCLE_COUNT: self.config[self.CIRCLE_COUNT],
-            self.CIRCLE_CLICKED: circle_clicked,
-            self.IS_TARGET: is_target,
-            self.REACTION_TIME: self.__calculate_reaction_time(),
-            # self.TASK_COMPLETION_TIME,  # TODO when should it be started and logged
-            self.TIMESTAMP: datetime.now(),
-            self.ROUND: self.__round  # TODO round number or special feat
-            # POINTER_TYPE = self.__pointer_type  # TODO
-        }
 
     @staticmethod
     def __write_to_stdout_in_csv_format(row_data):
@@ -151,17 +70,96 @@ class PointingExperimentModel(QObject):
             if i == values_length - 1:
                 sys.stdout.write(value)
             else:
-                sys.stdout.write(value + ", ")
+                sys.stdout.write(value + ",")
 
         sys.stdout.write("\n")
         sys.stdout.flush()
+
+    def __init__(self, config):
+        super().__init__()
+
+        self.config = config
+
+        self.__reset_model()
+        self.__stdout_csv_column_names()
+
+    def __reset_model(self):
+        self.__round = 0
+        self.__pointer_type = Pointer.NORMAL_POINTER  # TODO
+
+        self.__mouse_start_position = QtCore.QPoint(0, 0)  # TODO start position
+
+        self.__condition = Condition.CONDITION_1
+
+        self.__start_time = self.INVALID_TIME
+        self.__end_time = self.INVALID_TIME
+
+    def __get_csv_columns(self):
+        return [
+            self.PARTICIPANT_ID,
+            self.CONDITION,
+            self.POINTER_TYPE,
+            self.MOUSE_START_POSITION_X,
+            self.MOUSE_START_POSITION_Y,
+            self.MOUSE_CLICKED_POSITION_X,
+            self.MOUSE_CLICKED_POSITION_Y,
+            self.DISTANCE_TO_START_POSITION,
+            self.CIRCLE_COUNT,
+            self.CIRCLE_CLICKED,
+            self.IS_TARGET,
+            self.TASK_COMPLETION_TIME,
+            self.TIMESTAMP,
+            self.ROUND
+        ]
+
+    def __stdout_csv_column_names(self):
+        for column_name in self.__get_csv_columns():
+            if column_name == self.__get_csv_columns()[-1]:
+                sys.stdout.write(str(column_name))
+            else:
+                sys.stdout.write(str(column_name) + ",")
+
+        sys.stdout.write("\n")
+        sys.stdout.flush()
+
+    def __calculate_distance_to_start_position(self, mouse_position):
+        return math.hypot(
+            mouse_position.x() - self.__mouse_start_position.x(),
+            mouse_position.y() - self.__mouse_start_position.y()
+        )
+
+    def __calculate_task_time(self):
+        try:
+            return (self.__end_time - self.__start_time).total_seconds() * 1000
+        except AttributeError:
+            return self.INVALID_TIME
+        except TypeError:
+            return self.INVALID_TIME
+
+    def __create_row_data(self, mouse_position, circle_clicked=False, is_target=False):
+        return {
+            self.PARTICIPANT_ID: self.config[self.PARTICIPANT_ID],
+            self.CONDITION: self.__condition.value,
+            self.POINTER_TYPE: self.__pointer_type.value,
+            self.MOUSE_START_POSITION_X: self.__mouse_start_position.x(),
+            self.MOUSE_START_POSITION_Y: self.__mouse_start_position.y(),
+            self.MOUSE_CLICKED_POSITION_X: mouse_position.x(),
+            self.MOUSE_CLICKED_POSITION_Y: mouse_position.y(),
+            self.DISTANCE_TO_START_POSITION: self.__calculate_distance_to_start_position(mouse_position),
+            self.CIRCLE_COUNT: self.config[self.CIRCLE_COUNT],
+            self.CIRCLE_CLICKED: circle_clicked,
+            self.IS_TARGET: is_target,
+            self.TASK_COMPLETION_TIME: self.__calculate_task_time(),
+            self.TIMESTAMP: datetime.now(),
+            self.ROUND: self.__round
+        }
 
     def handle_false_clicked(self, mouse_position):
         self.__write_to_stdout_in_csv_format(self.__create_row_data(mouse_position))
 
     def handle_circle_clicked(self, mouse_position, is_target):
-        if is_target:  # TODO when it is relevant update start time
-            self.__round += 1
+        if is_target:
+            self.__round += 1  # TODO sth with round
             self.__end_time = datetime.now()
             self.__write_to_stdout_in_csv_format(
                 self.__create_row_data(mouse_position, circle_clicked=True, is_target=is_target))
@@ -175,4 +173,4 @@ class PointingExperimentModel(QObject):
 
     def start_timer(self):
         if self.__start_time == self.INVALID_TIME:
-            self.__start_time = datetime.now()  # TODO when it is relevant update start time
+            self.__start_time = datetime.now()
