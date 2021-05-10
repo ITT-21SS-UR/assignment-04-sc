@@ -93,6 +93,7 @@ class MainWindow(QtWidgets.QWidget):
 
         self.__circles = []
         self.__model = PointingExperimentModel(config)
+        self.__pointing_technique = None
 
         self.__color_timer = QtCore.QTimer(self)
         self.__color_timer.setInterval(100)
@@ -168,11 +169,8 @@ class MainWindow(QtWidgets.QWidget):
         self.__setup_distraction()
 
         start_position = self.mapToGlobal(self.rect().bottomLeft())
-        QtGui.QCursor.setPos(start_position)
+        # QtGui.QCursor.setPos(start_position)
         self.__model.set_mouse_start_position(start_position)
-
-        if self.__model.get_pointer() == "novel":
-            self.__pointing_technique = PointingTechnique(self.__circles)  # TODO pointing technique
 
     def __setup_distraction(self):
         distraction = self.__model.get_distraction()
@@ -199,6 +197,7 @@ class MainWindow(QtWidgets.QWidget):
         target.move(target_pos[0], target_pos[1])
         target.clicked.connect(self.__circle_clicked)
         self.__circles.append(target)
+        self.__pointing_technique = PointingTechnique(target)
 
         for i in range(0, count - 1):
             (x, y) = self.get_random_pos(max_x, max_y)
