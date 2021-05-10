@@ -8,21 +8,6 @@ from PyQt5 import QtCore
 from PyQt5.QtCore import QObject
 
 
-class State(Enum):
-    DESCRIPTION_STUDY = 1
-    NORMAL_POINTER = 2
-    NOVEL_POINTER = 3
-    DESCRIPTION_END = 4
-
-
-class Condition(Enum):
-    # TODO conditions should probably be different
-    # how many condition do we want to have 3?
-    CONDITION_1 = "condition1"
-    CONDITION_2 = "condition2"
-    CONDITION_3 = "condition3"
-
-
 class Pointer(Enum):
     NORMAL_POINTER = "normal pointer"
     NOVEL_POINTER = "novel pointer"
@@ -34,8 +19,6 @@ class PointingExperimentModel(QObject):
     COLOR_BACKGROUND = "color_background"
     COLOR_CIRCLES = "color_circles"
     COLOR_TARGET = "color_target"
-    CIRCLE_MIN_SIZE = "circle_min_size"
-    CIRCLE_MAX_SIZE = "circle_max_size"
     CIRCLE_SIZE = "circle_size"
     TARGET_POSITIONS = "target_positions"
     CONDITIONS = "conditions"
@@ -56,7 +39,6 @@ class PointingExperimentModel(QObject):
 
     TASK_COMPLETION_TIME = "task_completion_time_in_ms"
     TIMESTAMP = "timestamp"
-    ROUND = "round"
 
     # remaining constants
     INVALID_TIME = "NaN"
@@ -95,7 +77,6 @@ class PointingExperimentModel(QObject):
         self.__stdout_csv_column_names()
 
     def __reset_model(self):
-        self.__round = 0
         self.__pointer_type = Pointer.NORMAL_POINTER  # TODO
 
         self.__mouse_start_position = QtCore.QPoint(0, 0)  # TODO start position
@@ -120,11 +101,11 @@ class PointingExperimentModel(QObject):
             self.MOUSE_CLICKED_POSITION_Y,
             self.DISTANCE_TO_START_POSITION,
             self.CIRCLE_COUNT,
+            self.CIRCLE_SIZE,
             self.CIRCLE_CLICKED,
             self.IS_TARGET,
             self.TASK_COMPLETION_TIME,
-            self.TIMESTAMP,
-            self.ROUND
+            self.TIMESTAMP
         ]
 
     def __stdout_csv_column_names(self):
@@ -162,11 +143,11 @@ class PointingExperimentModel(QObject):
             self.MOUSE_CLICKED_POSITION_Y: mouse_position.y(),
             self.DISTANCE_TO_START_POSITION: self.__calculate_distance_to_start_position(mouse_position),
             self.CIRCLE_COUNT: self.get_circle_count(),
+            self.CIRCLE_SIZE: self.get_circle_size(),
             self.CIRCLE_CLICKED: circle_clicked,
             self.IS_TARGET: is_target,
             self.TASK_COMPLETION_TIME: self.__calculate_task_time(),
-            self.TIMESTAMP: datetime.now(),
-            self.ROUND: self.__round
+            self.TIMESTAMP: datetime.now()
         }
 
     def get_background_color(self):
@@ -196,7 +177,7 @@ class PointingExperimentModel(QObject):
         if not (self.__target_position_index < len(self.__target_positions)):
             self.__target_position_index = 0
             random.shuffle(self.__target_positions)
-            
+
             conditions = self.config[self.CONDITIONS]
             index = conditions.index(self.__condition) + 1
 
@@ -204,7 +185,7 @@ class PointingExperimentModel(QObject):
                 return False
 
             self.__condition = conditions[index]
-        
+
         return True
 
     def handle_false_clicked(self, mouse_position):
@@ -212,7 +193,6 @@ class PointingExperimentModel(QObject):
 
     def handle_circle_clicked(self, mouse_position, is_target):
         if is_target:
-            self.__round += 1  # TODO sth with round
             self.__end_time = datetime.now()
             self.__write_to_stdout_in_csv_format(
                 self.__create_row_data(mouse_position, circle_clicked=True, is_target=is_target))
