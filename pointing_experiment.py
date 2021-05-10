@@ -1,8 +1,5 @@
 #!/usr/bin/python3
 
-import configparser
-import json
-import os
 import random
 import sys
 from math import dist
@@ -10,6 +7,7 @@ from math import dist
 from PyQt5 import QtGui, QtWidgets, QtCore
 from PyQt5.QtCore import pyqtSignal
 
+from config_parsing import ConfigParsing
 from pointing_experiment_model import PointingExperimentModel
 
 
@@ -88,7 +86,7 @@ class MainWindow(QtWidgets.QWidget):
         self.setFixedSize(800, 600)
         self.move(QtWidgets.qApp.desktop().availableGeometry(self).center() - self.rect().center())
 
-        self.setWindowTitle("FittsLawTest")
+        self.setWindowTitle("Fitts Law Test")
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.setMouseTracking(True)
 
@@ -167,7 +165,10 @@ class MainWindow(QtWidgets.QWidget):
 
         self.update()
         self.__setup_distraction()
-        # QtGui.QCursor.setPos(self.mapToGlobal(self.rect().bottomLeft()))
+
+        start_position = self.mapToGlobal(self.rect().bottomLeft())
+        QtGui.QCursor.setPos(start_position)
+        self.__model.set_mouse_start_position(start_position)
 
     def __setup_distraction(self):
         distraction = self.__model.get_distraction()
@@ -186,9 +187,6 @@ class MainWindow(QtWidgets.QWidget):
     def __create_circles(self, count, diameter):
         max_x = self.width() - diameter
         max_y = self.height() - diameter
-
-        # for i in range(0, 5):
-        #     print(str(self.get_random_pos(max_x, max_y)))
 
         target = CircleWidget(self)
         target.set_diameter(diameter)
@@ -228,51 +226,12 @@ class MainWindow(QtWidgets.QWidget):
             self.__model.handle_false_clicked(event.pos())
 
 
-def exit_program(message="Please give a valid .ini or .json file as arguments (-_-)\n"):
-    sys.stderr.write(message)
-    sys.exit(1)
-
-
-def create_ini_config(file_name):
-    config = configparser.ConfigParser()
-    config.read(file_name)
-
-    return dict(config["DEFAULT"])
-
-
-def create_json_config(file_name):
-    with open(file_name) as file:
-        return json.load(file)
-
-
-def read_test_config():
-    if len(sys.argv) < 2:
-        exit_program()
-
-    file_name = sys.argv[1]
-
-    if not os.path.isfile(file_name):
-        exit_program("File does not exist (-_-)\n")
-
-    file_extension = os.path.splitext(file_name)
-
-    if file_extension[-1] == ".ini":
-        return create_ini_config(file_name)
-
-    elif file_extension[-1] == ".json":
-        return create_json_config(file_name)
-
-    else:
-        exit_program()
-
-
 if __name__ == '__main__':
-    # TODO check if file contains correct and all relevant data; at the end check if a key is missing?
-    test_config = read_test_config()
+    test_config = ConfigParsing()
 
     app = QtWidgets.QApplication(sys.argv)
 
-    trial = MainWindow(test_config)
+    trial = MainWindow(test_config.get_config())
     trial.show()
 
     sys.exit(app.exec_())

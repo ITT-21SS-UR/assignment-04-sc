@@ -4,43 +4,47 @@ import sys
 from datetime import datetime
 from enum import Enum
 
-from PyQt5 import QtCore
 from PyQt5.QtCore import QObject
 
 
 class Pointer(Enum):
-    NORMAL_POINTER = "normal pointer"
-    NOVEL_POINTER = "novel pointer"
+    NORMAL_POINTER = "normal"
+    NOVEL_POINTER = "novel"
 
 
-class PointingExperimentModel(QObject):
-    # relevant dict keys of ini and json file
+class ConfigKeys(Enum):
     PARTICIPANT_ID = "participant_id"
+    POINTER_TYPE = "pointer_type"
     COLOR_BACKGROUND = "color_background"
     COLOR_CIRCLES = "color_circles"
     COLOR_TARGET = "color_target"
     CIRCLE_SIZE = "circle_size"
-    TARGET_POSITIONS = "target_positions"
-    CONDITIONS = "conditions"
+    CIRCLE_COUNT = "circle_count"
     DISTRACTION = "distraction"
+    CONDITIONS = "conditions"
+    TARGET_POSITIONS = "target_positions"
 
+    @staticmethod
+    def get_all_values():
+        return list(map(lambda v: v.value, ConfigKeys))
+
+
+class PointingExperimentModel(QObject):
     # remaining csv column names
     CONDITION = "condition"
-    POINTER_TYPE = "pointer_type"
     MOUSE_START_POSITION_X = "mouse_start_x_position"
     MOUSE_START_POSITION_Y = "mouse_start_y_position"
     MOUSE_CLICKED_POSITION_X = "mouse_clicked_x_position"
     MOUSE_CLICKED_POSITION_Y = "mouse_clicked_y_position"
     DISTANCE_TO_START_POSITION = "distance_to_start_position"
 
-    CIRCLE_COUNT = "circle_count"
     CIRCLE_CLICKED = "is_circle_clicked"
     IS_TARGET = "is_target"
 
     TASK_COMPLETION_TIME = "task_completion_time_in_ms"
     TIMESTAMP = "timestamp"
 
-    # remaining constants
+    # remaining constant
     INVALID_TIME = "NaN"
 
     @staticmethod
@@ -64,44 +68,34 @@ class PointingExperimentModel(QObject):
 
         self.config = config
 
-        conditions = self.config[self.CONDITIONS]
-        if not conditions:
-            print("config: no conditions found")
-            sys.exit(1)
+        conditions = self.config[ConfigKeys.CONDITIONS.value]
 
         self.__condition = conditions[0]
         self.__target_positions = []
         self.__target_position_index = 0
 
-        self.__reset_model()
-        self.__stdout_csv_column_names()
-
-    def __reset_model(self):
-        self.__pointer_type = Pointer.NORMAL_POINTER  # TODO
-
-        self.__mouse_start_position = QtCore.QPoint(0, 0)  # TODO start position
-
         self.__start_time = self.INVALID_TIME
         self.__end_time = self.INVALID_TIME
 
         self.__setup_target_positions()
+        self.__stdout_csv_column_names()
 
     def __setup_target_positions(self):
-        self.__target_positions = self.config[self.TARGET_POSITIONS]
+        self.__target_positions = self.config[ConfigKeys.TARGET_POSITIONS.value]
         random.shuffle(self.__target_positions)
 
     def __get_csv_columns(self):
         return [
-            self.PARTICIPANT_ID,
+            ConfigKeys.PARTICIPANT_ID.value,
             self.CONDITION,
-            self.POINTER_TYPE,
+            ConfigKeys.POINTER_TYPE.value,
             self.MOUSE_START_POSITION_X,
             self.MOUSE_START_POSITION_Y,
             self.MOUSE_CLICKED_POSITION_X,
             self.MOUSE_CLICKED_POSITION_Y,
             self.DISTANCE_TO_START_POSITION,
-            self.CIRCLE_COUNT,
-            self.CIRCLE_SIZE,
+            ConfigKeys.CIRCLE_COUNT.value,
+            ConfigKeys.CIRCLE_SIZE.value,
             self.CIRCLE_CLICKED,
             self.IS_TARGET,
             self.TASK_COMPLETION_TIME,
@@ -134,42 +128,51 @@ class PointingExperimentModel(QObject):
 
     def __create_row_data(self, mouse_position, circle_clicked=False, is_target=False):
         return {
-            self.PARTICIPANT_ID: self.config[self.PARTICIPANT_ID],
+            ConfigKeys.PARTICIPANT_ID.value: self.get_participant_id(),
             self.CONDITION: self.__condition["id"],
-            self.POINTER_TYPE: self.__pointer_type.value,
+            ConfigKeys.POINTER_TYPE: self.get_pointer(),
             self.MOUSE_START_POSITION_X: self.__mouse_start_position.x(),
             self.MOUSE_START_POSITION_Y: self.__mouse_start_position.y(),
             self.MOUSE_CLICKED_POSITION_X: mouse_position.x(),
             self.MOUSE_CLICKED_POSITION_Y: mouse_position.y(),
             self.DISTANCE_TO_START_POSITION: self.__calculate_distance_to_start_position(mouse_position),
-            self.CIRCLE_COUNT: self.get_circle_count(),
-            self.CIRCLE_SIZE: self.get_circle_size(),
+            ConfigKeys.CIRCLE_COUNT: self.get_circle_count(),
+            ConfigKeys.CIRCLE_SIZE: self.get_circle_size(),
             self.CIRCLE_CLICKED: circle_clicked,
             self.IS_TARGET: is_target,
             self.TASK_COMPLETION_TIME: self.__calculate_task_time(),
             self.TIMESTAMP: datetime.now()
         }
 
+    def set_mouse_start_position(self, position):
+        self.__mouse_start_position = position
+
+    def get_participant_id(self):
+        return self.config[ConfigKeys.PARTICIPANT_ID.value]
+
     def get_background_color(self):
-        return self.config[self.COLOR_BACKGROUND]
+        return self.config[ConfigKeys.COLOR_BACKGROUND.value]
 
     def get_circle_color(self):
-        return self.config[self.COLOR_CIRCLES]
+        return self.config[ConfigKeys.COLOR_CIRCLES.value]
 
     def get_target_color(self):
-        return self.config[self.COLOR_TARGET]
+        return self.config[ConfigKeys.COLOR_TARGET.value]
 
     def get_target_position(self):
         return self.__target_positions[self.__target_position_index]
 
     def get_circle_size(self):
-        return self.__condition[self.CIRCLE_SIZE]
+        return self.__condition[ConfigKeys.CIRCLE_SIZE.value]
 
     def get_circle_count(self):
-        return self.__condition[self.CIRCLE_COUNT]
+        return self.__condition[ConfigKeys.CIRCLE_COUNT.value]
 
     def get_distraction(self):
-        return self.__condition[self.DISTRACTION]
+        return self.__condition[ConfigKeys.DISTRACTION.value]
+
+    def get_pointer(self):
+        return self.config[ConfigKeys.POINTER_TYPE.value]
 
     def select_next_target(self):
         self.__target_position_index += 1
@@ -178,7 +181,7 @@ class PointingExperimentModel(QObject):
             self.__target_position_index = 0
             random.shuffle(self.__target_positions)
 
-            conditions = self.config[self.CONDITIONS]
+            conditions = self.config[ConfigKeys.CONDITIONS.value]
             index = conditions.index(self.__condition) + 1
 
             if not (index < len(conditions)):

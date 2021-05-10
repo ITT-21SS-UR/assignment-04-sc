@@ -6,3 +6,6 @@ test_setup
 raw_log_data
 experiment/.ipynb_checkpoints/
 experiment/test.csv
+test.csv
+test_config2.json
+test_configs_for_study/

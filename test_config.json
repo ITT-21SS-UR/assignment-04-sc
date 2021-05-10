@@ -1,5 +1,6 @@
 {
   "participant_id": 1,
+  "pointer_type": "normal",
   "color_background": "Orange",
   "color_circles": "Black",
   "color_target": "Red",
