@@ -1,0 +1,67 @@
+{
+  "participant_id": 2,
+  "pointer_type": "novel",
+  "color_background": "Orange",
+  "color_circles": "Black",
+  "color_target": "Red",
+  "conditions": [
+    {
+      "id": 3,
+      "circle_size": 100,
+      "circle_count": 20,
+      "distraction": "circle_flicker"
+    },
+    {
+      "id": 4,
+      "circle_size": 50,
+      "circle_count": 75,
+      "distraction": "circle_flicker"
+    },
+    {
+      "id": 2,
+      "circle_size": 50,
+      "circle_count": 75,
+      "distraction": "none"
+    },
+    {
+      "id": 5,
+      "circle_size": 100,
+      "circle_count": 20,
+      "distraction": "background_flicker"
+    },
+    {
+      "id": 1,
+      "circle_size": 100,
+      "circle_count": 20,
+      "distraction": "none"
+    },
+    {
+      "id": 6,
+      "circle_size": 50,
+      "circle_count": 75,
+      "distraction": "background_flicker"
+    }
+  ],
+  "target_positions": [
+    [
+      175,
+      469
+    ],
+    [
+      316,
+      269
+    ],
+    [
+      47,
+      204
+    ],
+    [
+      299,
+      189
+    ],
+    [
+      89,
+      11
+    ]
+  ]
+}

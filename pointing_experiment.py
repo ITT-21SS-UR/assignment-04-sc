@@ -9,6 +9,7 @@ from PyQt5.QtCore import pyqtSignal
 
 from config_parsing import ConfigParsing
 from pointing_experiment_model import PointingExperimentModel
+from pointing_technique import PointingTechnique
 
 
 class CircleWidget(QtWidgets.QWidget):
@@ -170,6 +171,9 @@ class MainWindow(QtWidgets.QWidget):
         QtGui.QCursor.setPos(start_position)
         self.__model.set_mouse_start_position(start_position)
 
+        if self.__model.get_pointer() == "novel":
+            self.__pointing_technique = PointingTechnique(self.__circles)  # TODO pointing technique
+
     def __setup_distraction(self):
         distraction = self.__model.get_distraction()
         if distraction == "none":
@@ -219,6 +223,14 @@ class MainWindow(QtWidgets.QWidget):
 
     def mouseMoveEvent(self, event):
         self.__model.start_timer()
+        if self.__model.get_pointer() == "novel":
+            self.__pointing_technique.filter(event.pos())
+
+            pass
+            # Qt::ForbiddenCursor if it is not the target
+            # if target Qt::CrossCursor
+
+            # TODO pointing technique
 
     def mousePressEvent(self, event):
         # is only called when background is clicked

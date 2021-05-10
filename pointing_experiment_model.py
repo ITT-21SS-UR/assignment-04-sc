@@ -7,11 +7,6 @@ from enum import Enum
 from PyQt5.QtCore import QObject
 
 
-class Pointer(Enum):
-    NORMAL_POINTER = "normal"
-    NOVEL_POINTER = "novel"
-
-
 class ConfigKeys(Enum):
     PARTICIPANT_ID = "participant_id"
     POINTER_TYPE = "pointer_type"
