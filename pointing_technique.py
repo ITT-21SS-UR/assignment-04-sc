@@ -7,7 +7,7 @@ Filter is called when the mouse is moved.
 import time
 import math
 from evdev import UInput, ecodes as e
-from PyQt5 import QtCore
+from PyQt5 import QtWidgets
 
 class PointingTechnique:
 
@@ -19,69 +19,59 @@ class PointingTechnique:
     def __get_distance_to_target(self, pos):
         return math.dist([pos.x(), pos.y()], [self.__target_pos.x(), self.__target_pos.y()])
 
-    def __is_in_target(self, x, y):
-        pos = QtCore.QPoint(int(x), int(y))
+    def __is_in_target(self, pos):
         return self.__get_distance_to_target(pos) <= (self.__target.width() / 2)
 
-    def __is_inside_window(self, x, y):
-        parent = self.__target.parent()
-        return parent.rect().contains(int(x), int(y))
-
-    def __move_to_target(self, pos):
-        if (self.__is_in_target(pos.x(), pos.y())):
+    # https://en.wikipedia.org/wiki/Linear_interpolation
+    # https://stackoverflow.com/questions/49173095/how-to-move-an-object-along-a-line-given-two-points#49173439
+    def __move_to_target(self):
+        if self.__moving or self.__is_in_target(self.__current_pos):
             return
 
-        self.__active = True
+        self.__moving = True
 
-        dist_x = self.__target_pos.x() - pos.x()
-        dist_y = self.__target_pos.y() - pos.y()
+        # TODO move "20" to config
+        n = 20
+        x0, y0 = self.__current_pos.x(), self.__current_pos.y()
+        x1, y1 = self.__target_pos.x(), self.__target_pos.y()
+        x_t0, y_t0 = x0, y0
 
-        ratio = abs(dist_y / dist_x) if dist_x != 0 else 1
+        for i in range(0, n):
+            if self.__is_in_target(self.__current_pos):
+                return
 
-        dir_x = 1 if dist_x >= 0 else -1
-        dir_y = 1 if dist_y >= 0 else -1
+            t = i / n
+            x_t = (1.0 - t) * x0 + t * x1
+            y_t = (1.0 - t) * y0 + t * y1
 
-        delta_x = dir_x * self.__speed if dist_x != 0 else 0
-        delta_y = dir_y * self.__speed * ratio
-
-        if delta_y < 1:
-            delta_y = 1 / delta_y
-            delta_x /= delta_y
-
-        x = pos.x()
-        y = pos.y()
-
-        rel_x = math.floor(delta_x + 0.5)
-        rel_y = math.floor(delta_y + 0.5)
-        
-        while (not self.__is_in_target(x, y) and self.__is_inside_window(x, y)):
-            x += delta_x
-            y += delta_y
+            rel_x = int(x_t - x_t0)
+            rel_y = int(y_t - y_t0)
 
             self.__device.write(e.EV_REL, e.REL_X, rel_x)
             self.__device.write(e.EV_REL, e.REL_Y, rel_y)
             self.__device.syn()
 
+            x_t0, y_t0 = x_t, y_t
+
             time.sleep(0.01)
-        
-        self.__active = False
+            QtWidgets.qApp.processEvents()
+
+        self.__moving = False
 
     def __init__(self, target):
-        self.__active = False
+        self.__moving = False
         self.__device = UInput(self.capabilities)
         self.__target = target
         self.__target_pos = self.__target.geometry().center()
-        self.__speed = 2
+        self.__current_pos = None
 
     def __del__(self):
         self.__device.close()
 
-    def filter(self, current_position):
-        if self.__active:
-            return
+    def filter(self, current_pos):
+        self.__current_pos = current_pos
 
-        if self.__get_distance_to_target(current_position) < (self.__target.width() * 2):
-            self.__move_to_target(current_position)
-        
-        # TODO get nearest circle
-        # highlight the nearest circle
+        # TODO move "0.33" to config
+        threshold = int(self.__target.parent().width() * 0.33)
+        if self.__get_distance_to_target(current_pos) < threshold:
+            self.__move_to_target()

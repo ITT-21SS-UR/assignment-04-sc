@@ -77,6 +77,8 @@ class CircleWidget(QtWidgets.QWidget):
 
 
 class MainWindow(QtWidgets.QWidget):
+    mouse_target_color = "Blue"
+
     @staticmethod
     def get_random_pos(max_x, max_y):
         return random.randint(0, max_x), random.randint(0, max_y)
@@ -98,7 +100,7 @@ class MainWindow(QtWidgets.QWidget):
         self.__color_timer = QtCore.QTimer(self)
         self.__color_timer.setInterval(100)
         self.__color_timer.timeout.connect(self.__on_timeout)
-        self.__enable_background_flicker = False
+        self.__enable_background_flicker = False        
 
         self.__setup_ui()
 
@@ -109,12 +111,21 @@ class MainWindow(QtWidgets.QWidget):
         palette.setColor(QtGui.QPalette.Window, background_color)
         self.setPalette(palette)
 
+        mouse_target = CircleWidget(self)
+        mouse_target.set_diameter(50)
+        mouse_target.set_color(QtGui.QColor(self.mouse_target_color))
+        mouse_target.clicked.connect(self.__setup_circles)
+        mouse_target.move(0, self.height() - 50)
+        self.__mouse_target = mouse_target
+
         self.__show_intro()
 
     def __show_intro(self):
         target_color = self.__model.get_target_color().lower()
-        QtWidgets.QMessageBox.information(self, self.windowTitle(), "Click on the {0} circle".format(target_color))
-        self.__setup_circles()
+        mouse_target_color = self.mouse_target_color.lower()
+        QtWidgets.QMessageBox.information(self, self.windowTitle(),
+                "Click on the {0} circle to start and\nthen try to hit the {1} circle".format(mouse_target_color, target_color))
+        self.__clear_screen()
 
     def __on_timeout(self):
         for circle in self.__circles:
@@ -139,9 +150,9 @@ class MainWindow(QtWidgets.QWidget):
         self.__model.handle_circle_clicked(position, self.sender().is_target())
 
         if self.sender().is_target():
-            self.__setup_circles()
+            self.__clear_screen()
 
-    def __setup_circles(self):
+    def __clear_screen(self):
         if self.__circles:
             self.__color_timer.stop()
 
@@ -155,6 +166,18 @@ class MainWindow(QtWidgets.QWidget):
                 QtWidgets.qApp.quit()
                 return
 
+        if self.__enable_background_flicker:
+            palette = self.palette()
+            palette.setColor(QtGui.QPalette.Window, QtGui.QColor(self.__model.get_background_color()))
+            self.setPalette(palette)
+
+        self.__model.set_mouse_start_position(self.mapFromGlobal(QtGui.QCursor.pos()))
+        self.__pointing_technique = None
+        self.__mouse_target.show()
+        self.update()
+
+    def __setup_circles(self):
+        self.__mouse_target.hide()
         self.__create_circles(self.__model.get_circle_count(), self.__model.get_circle_size())
 
         circle_color = QtGui.QColor(self.__model.get_circle_color())
@@ -167,10 +190,6 @@ class MainWindow(QtWidgets.QWidget):
 
         self.update()
         self.__setup_distraction()
-
-        start_position = self.mapToGlobal(self.rect().bottomLeft())
-        # QtGui.QCursor.setPos(start_position)
-        self.__model.set_mouse_start_position(start_position)
 
     def __setup_distraction(self):
         distraction = self.__model.get_distraction()
@@ -186,10 +205,7 @@ class MainWindow(QtWidgets.QWidget):
 
         self.__color_timer.start()
 
-    def __create_circles(self, count, diameter):
-        max_x = self.width() - diameter
-        max_y = self.height() - diameter
-
+    def __create_target(self, diameter):
         target = CircleWidget(self)
         target.set_diameter(diameter)
         target.set_target(True)
@@ -197,6 +213,13 @@ class MainWindow(QtWidgets.QWidget):
         target.move(target_pos[0], target_pos[1])
         target.clicked.connect(self.__circle_clicked)
         self.__circles.append(target)
+        return target
+
+    def __create_circles(self, count, diameter):
+        max_x = self.width() - diameter
+        max_y = self.height() - diameter
+
+        target = self.__create_target(diameter)
         self.__pointing_technique = PointingTechnique(target)
 
         for i in range(0, count - 1):
@@ -222,14 +245,8 @@ class MainWindow(QtWidgets.QWidget):
 
     def mouseMoveEvent(self, event):
         self.__model.start_timer()
-        if self.__model.get_pointer() == "novel":
+        if self.__pointing_technique and self.__model.get_pointer() == "novel":
             self.__pointing_technique.filter(event.pos())
-
-            pass
-            # Qt::ForbiddenCursor if it is not the target
-            # if target Qt::CrossCursor
-
-            # TODO pointing technique
 
     def mousePressEvent(self, event):
         # is only called when background is clicked
