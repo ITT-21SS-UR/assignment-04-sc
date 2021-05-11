@@ -1,3 +1,4 @@
+import ast
 import configparser
 import json
 import os
@@ -20,7 +21,15 @@ class ConfigParsing:
         config = configparser.ConfigParser()
         config.read(self.file_name)
 
-        return dict(config["DEFAULT"])
+        ini_dict = dict(config["DEFAULT"])
+
+        target_position_key = ConfigKeys.TARGET_POSITIONS.value
+        ini_dict[target_position_key] = ast.literal_eval((ini_dict[target_position_key]))
+
+        conditions_key = ConfigKeys.CONDITIONS.value
+        ini_dict[conditions_key] = ast.literal_eval((ini_dict[conditions_key]))
+
+        return ini_dict
 
     def __create_json_config(self):
         with open(self.file_name) as file:
