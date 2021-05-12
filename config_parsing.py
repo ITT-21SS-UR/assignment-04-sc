@@ -7,6 +7,8 @@ import sys
 from pointing_experiment_model import ConfigKeys
 
 
+# Author: Claudia
+# Author of all test_config files: Claudia
 class ConfigParsing:
     @staticmethod
     def __exit_program(message="Please give a valid .ini or .json file as argument (-_-)\n"):

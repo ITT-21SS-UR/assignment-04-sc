@@ -1,10 +1,30 @@
 {
-  "participant_id": 2,
+  "participant_id": 4,
   "pointer_type": "normal",
+  "threshold": 0.33,
+  "density": 20,
   "color_background": "Orange",
   "color_circles": "Black",
   "color_target": "Red",
   "conditions": [
+    {
+      "id": 1,
+      "circle_size": 100,
+      "circle_count": 20,
+      "distraction": "none"
+    },
+    {
+      "id": 2,
+      "circle_size": 50,
+      "circle_count": 75,
+      "distraction": "none"
+    },
+    {
+      "id": 3,
+      "circle_size": 100,
+      "circle_count": 20,
+      "distraction": "circle_flicker"
+    },
     {
       "id": 4,
       "circle_size": 50,
@@ -18,28 +38,10 @@
       "distraction": "background_flicker"
     },
     {
-      "id": 3,
-      "circle_size": 100,
-      "circle_count": 20,
-      "distraction": "circle_flicker"
-    },
-    {
       "id": 6,
       "circle_size": 50,
       "circle_count": 75,
       "distraction": "background_flicker"
-    },
-    {
-      "id": 2,
-      "circle_size": 50,
-      "circle_count": 75,
-      "distraction": "none"
-    },
-    {
-      "id": 1,
-      "circle_size": 100,
-      "circle_count": 20,
-      "distraction": "none"
     }
   ],
   "target_positions": [

@@ -1,19 +1,31 @@
-"""
-TODO description of pointing technique
-Upon initialization the pointer gets the available circles.
-Filter is called when the mouse is moved.
-"""
-
-import time
 import math
-from evdev import UInput, ecodes as e
+import time
+
 from PyQt5 import QtWidgets
+from evdev import UInput, ecodes as e
 
+"""
+Our pointing technique supports users by moving the cursor to the target when it is near the target.
+We use linear interpolation to move the mouse to the target.
+
+Upon initialization the pointer gets the target, threshold (%) and density as parameters.
+UInput is used to move the mouse because setting the cursor position caused a lot of problems.
+
+Filter is called when the mouse is moved and the novel pointer is activated.
+The filter method gets the current position of the mouse and moves the pointer to the target
+when the distance to the target falls under the the threshold.
+
+When the pointer is in the center? of the target the cursor stops its movement.
+When the user clicks the target the device closes so that the cursor is not moved anymore.
+"""
+
+
+# Author: Sarah
+# Reviewer: Claudia
 class PointingTechnique:
-
     capabilities = {
-        e.EV_REL : (e.REL_X, e.REL_Y), 
-        e.EV_KEY : (e.BTN_LEFT, e.BTN_RIGHT)
+        e.EV_REL: (e.REL_X, e.REL_Y),
+        e.EV_KEY: (e.BTN_LEFT, e.BTN_RIGHT)
     }
 
     def __get_distance_to_target(self, pos):
@@ -30,8 +42,7 @@ class PointingTechnique:
 
         self.__moving = True
 
-        # TODO move "20" to config
-        n = 20
+        n = self.__density  # The smaller n is the "faster" the mouse becomes
         x0, y0 = self.__current_pos.x(), self.__current_pos.y()
         x1, y1 = self.__target_pos.x(), self.__target_pos.y()
         x_t0, y_t0 = x0, y0
@@ -58,12 +69,15 @@ class PointingTechnique:
 
         self.__moving = False
 
-    def __init__(self, target):
+    def __init__(self, target, threshold, density):
         self.__moving = False
         self.__device = UInput(self.capabilities)
         self.__target = target
         self.__target_pos = self.__target.geometry().center()
         self.__current_pos = None
+
+        self.__threshold = threshold
+        self.__density = density
 
     def __del__(self):
         self.__device.close()
@@ -71,7 +85,6 @@ class PointingTechnique:
     def filter(self, current_pos):
         self.__current_pos = current_pos
 
-        # TODO move "0.33" to config
-        threshold = int(self.__target.parent().width() * 0.33)
+        threshold = int(self.__target.parent().width() * self.__threshold)
         if self.__get_distance_to_target(current_pos) < threshold:
             self.__move_to_target()

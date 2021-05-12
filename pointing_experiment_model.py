@@ -7,9 +7,13 @@ from enum import Enum
 from PyQt5.QtCore import QObject
 
 
+# Main author: Claudia
+# Reviewer: Sarah
 class ConfigKeys(Enum):
     PARTICIPANT_ID = "participant_id"
     POINTER_TYPE = "pointer_type"
+    THRESHOLD = "threshold"
+    DENSITY = "density"
     COLOR_BACKGROUND = "color_background"
     COLOR_CIRCLES = "color_circles"
     COLOR_TARGET = "color_target"
@@ -168,6 +172,12 @@ class PointingExperimentModel(QObject):
 
     def get_pointer(self):
         return self.config[ConfigKeys.POINTER_TYPE.value]
+
+    def get_threshold(self):
+        return self.config[ConfigKeys.THRESHOLD.value]
+
+    def get_density(self):
+        return self.config[ConfigKeys.DENSITY.value]
 
     def select_next_target(self):
         self.__target_position_index += 1

@@ -1,32 +1,28 @@
 {
-  "participant_id": 3,
-  "pointer_type": "normal",
+  "participant_id": 4,
+  "pointer_type": "novel",
+  "threshold": 0.33,
+  "density": 20,
   "color_background": "Orange",
   "color_circles": "Black",
   "color_target": "Red",
   "conditions": [
     {
-      "id": 6,
+      "id": 2,
       "circle_size": 50,
       "circle_count": 75,
-      "distraction": "background_flicker"
+      "distraction": "none"
+    },
+    {
+      "id": 3,
+      "circle_size": 100,
+      "circle_count": 20,
+      "distraction": "circle_flicker"
     },
     {
       "id": 1,
       "circle_size": 100,
       "circle_count": 20,
-      "distraction": "none"
-    },
-    {
-      "id": 5,
-      "circle_size": 100,
-      "circle_count": 20,
-      "distraction": "background_flicker"
-    },
-    {
-      "id": 2,
-      "circle_size": 50,
-      "circle_count": 75,
       "distraction": "none"
     },
     {
@@ -36,10 +32,16 @@
       "distraction": "circle_flicker"
     },
     {
-      "id": 3,
+      "id": 6,
+      "circle_size": 50,
+      "circle_count": 75,
+      "distraction": "background_flicker"
+    },
+    {
+      "id": 5,
       "circle_size": 100,
       "circle_count": 20,
-      "distraction": "circle_flicker"
+      "distraction": "background_flicker"
     }
   ],
   "target_positions": [

@@ -1,6 +1,8 @@
 {
   "participant_id": 1,
   "pointer_type": "novel",
+  "threshold": 0.33,
+  "density": 20,
   "color_background": "Orange",
   "color_circles": "Black",
   "color_target": "Red",

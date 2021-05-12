@@ -11,7 +11,22 @@ from config_parsing import ConfigParsing
 from pointing_experiment_model import PointingExperimentModel
 from pointing_technique import PointingTechnique
 
+"""
+Program has to be executed with sudo else the novel pointer will not work.
+We did not use QtGui.QCursor.setPos() because it caused a lot of problems so that we couldn't conduct the study anymore.
+E. g. the cursor jumped up and down, the movement is not accurate, does weird things and movement is not possible at all
+even when we switched off the "Mauszeiger-Integration".
+So we decided to place a blue circle in the left corner of the window so that a user has approximately the same
+starting position.
 
+The features of the program were discussed together and everyone got their own tasks.
+The authors of the python and sub files are written at the beginning of the python file.
+When a main author is mentioned it means that the other person added code for their corresponding tasks/class.
+"""
+
+
+# Main author: Sarah
+# Reviewer: Claudia
 class CircleWidget(QtWidgets.QWidget):
     clicked = pyqtSignal([QtCore.QPoint])
 
@@ -100,7 +115,7 @@ class MainWindow(QtWidgets.QWidget):
         self.__color_timer = QtCore.QTimer(self)
         self.__color_timer.setInterval(100)
         self.__color_timer.timeout.connect(self.__on_timeout)
-        self.__enable_background_flicker = False        
+        self.__enable_background_flicker = False
 
         self.__setup_ui()
 
@@ -124,7 +139,8 @@ class MainWindow(QtWidgets.QWidget):
         target_color = self.__model.get_target_color().lower()
         mouse_target_color = self.mouse_target_color.lower()
         QtWidgets.QMessageBox.information(self, self.windowTitle(),
-                "Click on the {0} circle to start and\nthen try to hit the {1} circle".format(mouse_target_color, target_color))
+                                          "Click on the {0} circle to start and\nthen try to hit the {1} circle".format(
+                                              mouse_target_color, target_color))
         self.__clear_screen()
 
     def __on_timeout(self):
@@ -171,12 +187,12 @@ class MainWindow(QtWidgets.QWidget):
             palette.setColor(QtGui.QPalette.Window, QtGui.QColor(self.__model.get_background_color()))
             self.setPalette(palette)
 
-        self.__model.set_mouse_start_position(self.mapFromGlobal(QtGui.QCursor.pos()))
         self.__pointing_technique = None
         self.__mouse_target.show()
         self.update()
 
     def __setup_circles(self):
+        self.__model.set_mouse_start_position(self.mapFromGlobal(QtGui.QCursor.pos()))
         self.__mouse_target.hide()
         self.__create_circles(self.__model.get_circle_count(), self.__model.get_circle_size())
 
@@ -190,6 +206,7 @@ class MainWindow(QtWidgets.QWidget):
 
         self.update()
         self.__setup_distraction()
+        self.__model.start_timer()
 
     def __setup_distraction(self):
         distraction = self.__model.get_distraction()
@@ -213,6 +230,7 @@ class MainWindow(QtWidgets.QWidget):
         target.move(target_pos[0], target_pos[1])
         target.clicked.connect(self.__circle_clicked)
         self.__circles.append(target)
+
         return target
 
     def __create_circles(self, count, diameter):
@@ -220,7 +238,7 @@ class MainWindow(QtWidgets.QWidget):
         max_y = self.height() - diameter
 
         target = self.__create_target(diameter)
-        self.__pointing_technique = PointingTechnique(target)
+        self.__pointing_technique = PointingTechnique(target, self.__model.get_threshold(), self.__model.get_density())
 
         for i in range(0, count - 1):
             (x, y) = self.get_random_pos(max_x, max_y)
@@ -244,7 +262,6 @@ class MainWindow(QtWidgets.QWidget):
         return False
 
     def mouseMoveEvent(self, event):
-        self.__model.start_timer()
         if self.__pointing_technique and self.__model.get_pointer() == "novel":
             self.__pointing_technique.filter(event.pos())
 
