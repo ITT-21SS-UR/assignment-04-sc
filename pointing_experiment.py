@@ -13,12 +13,12 @@ from pointing_technique import PointingTechnique
 
 """
 The program must be run with sudo because the novel pointer requires root privileges to manipulate the mouse cursors.
-For setting the mouse to a fixed position we did not use QtGui.QCursor.setPos(), because doing so and integrating the
+For setting the mouse to a fixed position we did not use QtGui.QCursor.setPos() because doing so and integrating the
 mouse pointer caused problems like the cursor jumping up and down.
 Instead, we decided to place a blue circle in the left corner of the window that had to be clicked to start, which
 also leads to roughly the same mouse start position.
 
-The study was not carried out in a virtual environment, but in the main operating system (Manjaro). The reason for
+The study was not carried out in a virtual environment but in the main operating system (Manjaro). The reason for
 this was that in the VM the mouse sometimes got stuck despite or just because of the integration of the mouse pointer.
 
 The features of the program were discussed together and everyone got their own tasks.
