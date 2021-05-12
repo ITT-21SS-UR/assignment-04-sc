@@ -11,12 +11,13 @@ The following sources have been consulted for the implementation:
     - https://en.wikipedia.org/wiki/Linear_interpolation
     - https://stackoverflow.com/questions/49173095/how-to-move-an-object-along-a-line-given-two-points#49173439
 
-Upon initialization of the method, the target, a threshold value at which the indentation should start 
+Upon initialization of the method, the target, a threshold value at which the indentation should start
 and the number of interpolation steps are transmitted.
-For positioning the mouse UInput was used. # TODO source
+For positioning the mouse UInput was used (see https://python-evdev.readthedocs.io/en/latest/usage.html and
+https://www.kernel.org/doc/html/v4.12/input/uinput.html).
 
 The new pointing technique is executed when it is enabled in the config file and the mouse is moved.
-The filter method used for this gets the current position of the mouse and moves the pointer to the 
+The filter method used for this gets the current position of the mouse and moves the pointer to the
 target once the distance to the target is below the threshold.
 
 As the user clicks at the target, the device closes to prevent the cursor from moving.
