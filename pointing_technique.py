@@ -6,17 +6,20 @@ from evdev import UInput, ecodes as e
 
 """
 Our pointing technique supports users by moving the cursor to the target when it is near the target.
-We use linear interpolation to move the mouse to the target.
+It seems as if the target is magnetic. In fact, we use linear interpolation to move the mouse to the target.
+The following sources have been consulted for the implementation:
+    - https://en.wikipedia.org/wiki/Linear_interpolation
+    - https://stackoverflow.com/questions/49173095/how-to-move-an-object-along-a-line-given-two-points#49173439
 
-Upon initialization the pointer gets the target, threshold (%) and density as parameters.
-UInput is used to move the mouse because setting the cursor position caused a lot of problems.
+Upon initialization of the method, the target, a threshold value at which the indentation should start 
+and the number of interpolation steps are transmitted.
+For positioning the mouse UInput was used. # TODO source
 
-Filter is called when the mouse is moved and the novel pointer is activated.
-The filter method gets the current position of the mouse and moves the pointer to the target
-when the distance to the target falls under the threshold.
+The new pointing technique is executed when it is enabled in the config file and the mouse is moved.
+The filter method used for this gets the current position of the mouse and moves the pointer to the 
+target once the distance to the target is below the threshold.
 
-When the pointer is in the center? of the target the cursor stops its movement.
-When the user clicks the target the device closes so that the cursor is not moved anymore.
+As the user clicks at the target, the device closes to prevent the cursor from moving.
 """
 
 
@@ -34,6 +37,7 @@ class PointingTechnique:
     def __is_in_target(self, pos):
         return self.__get_distance_to_target(pos) <= (self.__target.width() / 2)
 
+    # Code based on:
     # https://en.wikipedia.org/wiki/Linear_interpolation
     # https://stackoverflow.com/questions/49173095/how-to-move-an-object-along-a-line-given-two-points#49173439
     def __move_to_target(self):

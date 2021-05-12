@@ -12,18 +12,17 @@ from pointing_experiment_model import PointingExperimentModel
 from pointing_technique import PointingTechnique
 
 """
-Program has to be executed with sudo else the novel pointer will not work.
-We did not use QtGui.QCursor.setPos() because it caused a lot of problems so that we couldn't conduct the study anymore.
-E. g. the cursor jumped up and down, the movement is not accurate, does weird things and movement is not possible at all
-even when we switched off the mouse cursor integration.
-So we decided to place a blue circle in the left corner of the window so that a user has approximately the same
-starting position.
-Also we didn't test it on Debian but on our main OS (Manjaro) because when we switched off the mouse cursor integration
-the Debian VM did not work properly anymore even if no code is executed.
+The program must be run with sudo because the novel pointer requires root privileges to manipulate the mouse cursors.
+For setting the mouse to a fixed position we did not use QtGui.QCursor.setPos(), because doing so and integrating the
+mouse pointer caused problems like the cursor jumping up and down.
+Instead, we decided to place a blue circle in the left corner of the window that had to be clicked to start, which
+also leads to roughly the same mouse start position.
+
+The study was not carried out in a virtual environment, but in the main operating system (Manjaro). The reason for
+this was that in the VM the mouse sometimes got stuck despite or just because of the integration of the mouse pointer.
 
 The features of the program were discussed together and everyone got their own tasks.
-The authors of the python and sub files are written at the beginning of the python file.
-When a main author is mentioned it means that the other person added code for their corresponding tasks/class.
+The authors of the python and sub files are written at the beginning of the python files.
 """
 
 
@@ -93,6 +92,8 @@ class CircleWidget(QtWidgets.QWidget):
             self.clicked.emit(event.globalPos())
 
 
+# Main author: Sarah
+# Reviewer: Claudia
 class MainWindow(QtWidgets.QWidget):
     mouse_target_color = "Blue"
 
@@ -239,6 +240,10 @@ class MainWindow(QtWidgets.QWidget):
         max_x = self.width() - diameter
         max_y = self.height() - diameter
 
+        # One-time determination of the position of the targets, which are then saved in config file
+        # for i in range(0, 5):
+        # print(str(self.get_random_pos(max_x, max_y)))
+
         target = self.__create_target(diameter)
         self.__pointing_technique = PointingTechnique(target, self.__model.get_threshold(), self.__model.get_density())
 
@@ -277,6 +282,7 @@ if __name__ == '__main__':
     test_config = ConfigParsing()
 
     app = QtWidgets.QApplication(sys.argv)
+    app.setQuitOnLastWindowClosed(True)
 
     trial = MainWindow(test_config.get_config())
     trial.show()
