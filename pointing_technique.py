@@ -13,7 +13,7 @@ UInput is used to move the mouse because setting the cursor position caused a lo
 
 Filter is called when the mouse is moved and the novel pointer is activated.
 The filter method gets the current position of the mouse and moves the pointer to the target
-when the distance to the target falls under the the threshold.
+when the distance to the target falls under the threshold.
 
 When the pointer is in the center? of the target the cursor stops its movement.
 When the user clicks the target the device closes so that the cursor is not moved anymore.

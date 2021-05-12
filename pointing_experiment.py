@@ -15,9 +15,11 @@ from pointing_technique import PointingTechnique
 Program has to be executed with sudo else the novel pointer will not work.
 We did not use QtGui.QCursor.setPos() because it caused a lot of problems so that we couldn't conduct the study anymore.
 E. g. the cursor jumped up and down, the movement is not accurate, does weird things and movement is not possible at all
-even when we switched off the "Mauszeiger-Integration".
+even when we switched off the mouse cursor integration.
 So we decided to place a blue circle in the left corner of the window so that a user has approximately the same
 starting position.
+Also we didn't test it on Debian but on our main OS (Manjaro) because when we switched off the mouse cursor integration
+the Debian VM did not work properly anymore even if no code is executed.
 
 The features of the program were discussed together and everyone got their own tasks.
 The authors of the python and sub files are written at the beginning of the python file.
